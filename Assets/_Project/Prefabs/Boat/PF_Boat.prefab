@@ -145,7 +145,7 @@ Rigidbody:
   m_Mass: 150
   m_LinearDamping: 0
   m_AngularDamping: 0.5
-  m_CenterOfMass: {x: 0, y: 0.15, z: 0}
+  m_CenterOfMass: {x: 0, y: 0.3, z: -0.25}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -175,9 +175,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatBuoyancy
   waterOverride: {fileID: 0}
   floatPointsRoot: {fileID: 3414804063389320155}
-  restDepth: 0.15
+  restDepth: 0.2
   maxDepth: 0.6
-  dampingRatio: 0.6
+  dampingRatio: 0.2
   drawGizmos: 1
 --- !u!1 &6063496400993238682
 GameObject:
