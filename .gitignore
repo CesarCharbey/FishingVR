@@ -116,5 +116,5 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# Project development planning files
-plan_de_developpement_vr_fishing_simulator.md
+# User-specific files
+/Documents
