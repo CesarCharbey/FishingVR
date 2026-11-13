@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e66e86a29c5d794b803fef6810b9107, type: 3}
   m_Name: FS_YellowPerch
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishSpecies
+  id: yellowperch
   displayName: Perchaude
+  description: "Petit poisson ray\xE9 tr\xE8s commun, il grignote longtemps avant de mordre."
+  icon: {fileID: 0}
+  rarity: 0
+  spawnWeightOverride: 0
   modelPrefab: {fileID: 919132149155446097, guid: 951f091b4a53a184d93371f5e012ab44, type: 3}
-  spawnWeight: 4
+  lengthCmRange: {x: 15, y: 30}
   weightKgRange: {x: 0.1, y: 0.4}
-  approachDelay: {x: 3, y: 8}
-  nibbleCount: {x: 1, y: 4}
-  nibbleInterval: {x: 0.6, y: 1.5}
-  biteWindow: 1.4
-  biteSinkDepth: 0.15
+  sizeRarityBias: 2
+  valuePerKg: 8
+  behaviour: {fileID: 11400000, guid: cfd246e571050ae40a21ce625ae6899f, type: 2}

@@ -45,12 +45,28 @@ namespace FishingVR.Fishing
         public UnityEvent<LineState> onStateChanged;
         public UnityEvent onBobberLanded;
 
+        [Header("Fight")]
+        [Tooltip("Shortest line while a fish is on (m).")]
+        [SerializeField] float minFightLength = 0.4f;
+        [SerializeField] Color slackColor = new Color(0.85f, 0.85f, 0.8f);
+        [SerializeField] Color tautColor = new Color(1f, 0.15f, 0.1f);
+
         LineState state = LineState.Retracted;
         float lineLength;
         Collider[] ownerColliders;
 
+        // Fight mode: the fish drives the hook; the bobber slides on the line toward the fish.
+        bool inFight;
+        bool fishLifted;
+        Vector3 fightHookPosition;
+        float fightTension;
+        Material tintMaterial;
+        static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+
         public LineState State => state;
         public float LineLength => lineLength;
+        public float MaxLineLength => maxLineLength;
+        public bool InFight => inFight;
         public Bobber Bobber => bobber;
         public Transform Hook => hook;
         public bool CanCast => state == LineState.Retracted;
@@ -81,6 +97,8 @@ namespace FishingVR.Fishing
         {
             if (bobber != null)
                 Destroy(bobber.gameObject);
+            if (tintMaterial != null)
+                Destroy(tintMaterial);
         }
 
         /// <summary>Launch the bobber from the rod tip.</summary>
@@ -102,11 +120,52 @@ namespace FishingVR.Fishing
         {
             if (state == LineState.Retracted || meters <= 0f)
                 return;
+            if (inFight)
+            {
+                // The fight decides when the fish is landed; the line never auto-retracts.
+                lineLength = Mathf.Max(minFightLength, lineLength - meters);
+                return;
+            }
             lineLength = Mathf.Max(0f, lineLength - meters);
             if (state == LineState.Flying)
                 SetState(LineState.Deployed); // reeling during the flight stops the line
             if (lineLength <= retractLength)
                 Retract();
+        }
+
+        // ---------- Fight mode (driven by FishFight) ----------
+
+        /// <summary>A fish is hooked: from now on the fight drives the hook and the line length.</summary>
+        public void BeginFight(Vector3 hookPosition)
+        {
+            inFight = true;
+            fishLifted = false;
+            fightHookPosition = hookPosition;
+            fightTension = 0f;
+            bobber.ClearSink();
+            bobber.SetCarried(true);
+            if (state != LineState.Deployed)
+                SetState(LineState.Deployed);
+        }
+
+        /// <summary>Per-frame fight state: hook (fish mouth) position, fish out of water, tension 0..1+.</summary>
+        public void UpdateFight(Vector3 hookPosition, bool lifted, float tension)
+        {
+            fightHookPosition = hookPosition;
+            fishLifted = lifted;
+            fightTension = tension;
+        }
+
+        /// <summary>The drag lets line out (or the fight adjusts it).</summary>
+        public void SetLineLength(float length) =>
+            lineLength = Mathf.Clamp(length, minFightLength, maxLineLength);
+
+        /// <summary>Fight over (caught or line broken): the hook comes back under the tip.</summary>
+        public void EndFight()
+        {
+            inFight = false;
+            fightTension = 0f;
+            Retract();
         }
 
         /// <summary>Bring the bobber back under the rod tip.</summary>
@@ -126,7 +185,7 @@ namespace FishingVR.Fishing
 
         void FixedUpdate()
         {
-            if (bobber == null || rodTip == null)
+            if (bobber == null || rodTip == null || inFight)
                 return;
 
             switch (state)
@@ -184,8 +243,45 @@ namespace FishingVR.Fishing
                 t.rotation = Quaternion.identity;
             }
 
-            UpdateHook();
+            if (inFight)
+                UpdateFightPose();
+            else
+                UpdateHook();
             DrawLines();
+            ApplyTint(inFight ? fightTension : 0f);
+        }
+
+        void UpdateFightPose()
+        {
+            // Hook = fish mouth. Bobber slides on the line, hookDepth above the hook toward the tip,
+            // held at the surface while the fish is under water.
+            var toTip = rodTip.position - fightHookPosition;
+            var bob = fightHookPosition + toTip.normalized * Mathf.Min(hookDepth, toTip.magnitude * 0.5f);
+            var water = WaterLevel.CurrentHeight;
+            if (!fishLifted && bob.y < water)
+                bob.y = water - Mathf.Clamp01(fightTension) * 0.1f; // pulled a bit under when taut
+            var t = bobber.transform;
+            t.position = Vector3.Lerp(t.position, bob, 1f - Mathf.Exp(-15f * Time.deltaTime));
+            t.rotation = Quaternion.Slerp(t.rotation, Quaternion.FromToRotation(Vector3.up, toTip.normalized), 0.2f);
+
+            if (hook != null)
+            {
+                hook.position = fightHookPosition;
+                hook.rotation = Quaternion.identity;
+            }
+        }
+
+        void ApplyTint(float tension)
+        {
+            if (mainLine == null) return;
+            // Shared material instance for both lines (property blocks are ignored by the GPU resident drawer).
+            if (tintMaterial == null)
+            {
+                tintMaterial = new Material(mainLine.sharedMaterial);
+                mainLine.sharedMaterial = tintMaterial;
+                if (leaderLine != null) leaderLine.sharedMaterial = tintMaterial;
+            }
+            tintMaterial.SetColor(BaseColorId, Color.Lerp(slackColor, tautColor, Mathf.InverseLerp(0.4f, 1f, tension)));
         }
 
         void UpdateHook()
@@ -204,7 +300,9 @@ namespace FishingVR.Fishing
                 var a = rodTip.position;
                 var b = bobber.LineTop.position;
                 var slack = Mathf.Max(0f, lineLength - Vector3.Distance(a, b));
-                var sag = state == LineState.Retracted ? 0f : Mathf.Min(maxSag, 0.02f + slack * sagPerSlackMeter);
+                var sag = state == LineState.Retracted ? 0f
+                    : inFight ? Mathf.Lerp(Mathf.Min(0.4f, Vector3.Distance(a, b) * 0.05f), 0f, Mathf.Clamp01(fightTension * 1.5f))
+                    : Mathf.Min(maxSag, 0.02f + slack * sagPerSlackMeter);
                 var mid = (a + b) * 0.5f + Vector3.down * sag;
                 for (var i = 0; i <= segments; i++)
                 {

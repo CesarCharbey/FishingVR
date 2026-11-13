@@ -15,19 +15,19 @@ namespace FishingVR.Fish
         Nibbling,
         /// <summary>Real bite: set the hook before the window ends.</summary>
         Biting,
-        /// <summary>Fish on the line (fight to be implemented).</summary>
+        /// <summary>Fish on the line: <see cref="FishFight"/> runs the fight.</summary>
         Hooked,
-        /// <summary>Fish left, short cooldown before another one comes.</summary>
+        /// <summary>Fish left (or line broke), short cooldown before another one comes.</summary>
         Escaped,
         /// <summary>Fish landed, short cooldown before another one comes.</summary>
         Caught,
     }
 
     /// <summary>
-    /// Preliminary fish behaviour: waiting phase, nibbles, bite and hook set.
-    /// Listens to the rod's hook-set gesture. The fight is not implemented yet:
-    /// a hooked fish hangs on the hook and is "caught" once the line is reeled in.
+    /// Bite phase: picks a species (by rarity weight), waiting, nibbles, bite and hook set.
+    /// Once hooked, hands over to <see cref="FishFight"/>.
     /// </summary>
+    [RequireComponent(typeof(FishFight))]
     public class FishBiteAI : MonoBehaviour
     {
         [SerializeField] FishingRod rod;
@@ -37,45 +37,34 @@ namespace FishingVR.Fish
         [SerializeField] bool debugLogs = true;
 
         [Header("Events")]
-        public UnityEvent<FishSpecies> onNibble;
-        public UnityEvent<FishSpecies> onBite;
-        public UnityEvent<FishSpecies, float> onHooked;
-        public UnityEvent<FishSpecies> onEscaped;
-        public UnityEvent<FishSpecies, float> onCaught;
+        public UnityEvent<FishInstance> onNibble;
+        public UnityEvent<FishInstance> onBite;
+        public UnityEvent<FishInstance> onHooked;
+        public UnityEvent<FishInstance> onEscaped;
 
+        FishFight fight;
         FishBiteState state = FishBiteState.Idle;
-        FishSpecies current;
-        float currentWeight;
+        FishInstance current;
         float timer;
         int nibblesLeft;
-        GameObject hookedModel;
-        GameObject caughtModel;
 
         public FishBiteState State => state;
-        public FishSpecies CurrentSpecies => current;
+        public FishInstance Current => current;
+        public FishFight Fight => fight;
+        public IReadOnlyList<FishSpecies> Species => species;
 
         FishingLine Line => rod != null ? rod.Line : null;
 
+        void Awake() => fight = GetComponent<FishFight>();
+
         void OnEnable()
         {
-            if (rod == null) return;
-            rod.onHookSetGesture.AddListener(OnHookSetGesture);
-            rod.onCast.AddListener(OnRodCast);
+            if (rod != null) rod.onHookSetGesture.AddListener(OnHookSetGesture);
         }
 
         void OnDisable()
         {
-            if (rod == null) return;
-            rod.onHookSetGesture.RemoveListener(OnHookSetGesture);
-            rod.onCast.RemoveListener(OnRodCast);
-        }
-
-        // A caught fish stays on the hook until the next cast (no bucket/bestiary yet).
-        void OnRodCast(Vector3 _)
-        {
-            if (caughtModel != null)
-                Destroy(caughtModel);
-            caughtModel = null;
+            if (rod != null) rod.onHookSetGesture.RemoveListener(OnHookSetGesture);
         }
 
         void Update()
@@ -84,15 +73,15 @@ namespace FishingVR.Fish
             if (line == null)
                 return;
 
-            var baitInWater = line.State == LineState.Deployed && line.Bobber.IsInWater;
+            var baitInWater = line.State == LineState.Deployed && line.Bobber.IsInWater && !line.InFight;
             timer -= Time.deltaTime;
 
             switch (state)
             {
                 case FishBiteState.Idle:
-                    if (baitInWater && line.Bobber.IsSettled && PickSpecies())
+                    if (baitInWater && line.Bobber.IsSettled && PickFish())
                     {
-                        timer = Random.Range(current.approachDelay.x, current.approachDelay.y);
+                        timer = RandomRange(current.Behaviour.approachDelay);
                         SetState(FishBiteState.Waiting);
                     }
                     break;
@@ -101,7 +90,8 @@ namespace FishingVR.Fish
                     if (!baitInWater) { SetState(FishBiteState.Idle); break; }
                     if (timer <= 0f)
                     {
-                        nibblesLeft = Random.Range(current.nibbleCount.x, current.nibbleCount.y + 1);
+                        var n = current.Behaviour.nibbleCount;
+                        nibblesLeft = Random.Range(n.x, n.y + 1);
                         timer = 0f;
                         SetState(FishBiteState.Nibbling);
                     }
@@ -116,25 +106,21 @@ namespace FishingVR.Fish
                         line.Bobber.Dip(nibbleDipDepth, 0.15f);
                         rod.SendHaptic(0.15f, 0.05f);
                         onNibble?.Invoke(current);
-                        timer = Random.Range(current.nibbleInterval.x, current.nibbleInterval.y);
+                        timer = RandomRange(current.Behaviour.nibbleInterval);
                     }
                     else
                     {
-                        line.Bobber.Sink(current.biteSinkDepth, current.biteWindow);
+                        line.Bobber.Sink(current.Behaviour.biteSinkDepth, current.Behaviour.biteWindow);
                         rod.SendHaptic(0.7f, 0.25f, true);
                         onBite?.Invoke(current);
-                        timer = current.biteWindow;
+                        timer = current.Behaviour.biteWindow;
                         SetState(FishBiteState.Biting);
                     }
                     break;
 
                 case FishBiteState.Biting:
+                    if (!baitInWater) { Escape("bait pulled out"); break; }
                     if (timer <= 0f) Escape("too late");
-                    break;
-
-                case FishBiteState.Hooked:
-                    if (line.State == LineState.Retracted)
-                        Catch();
                     break;
 
                 case FishBiteState.Escaped:
@@ -158,65 +144,56 @@ namespace FishingVR.Fish
             }
         }
 
-        bool PickSpecies()
+        bool PickFish()
         {
             var total = 0f;
-            foreach (var s in species) if (s != null) total += s.spawnWeight;
+            foreach (var s in species) if (IsValid(s)) total += s.SpawnWeight;
             if (total <= 0f) return false;
 
             var pick = Random.value * total;
             foreach (var s in species)
             {
-                if (s == null) continue;
-                pick -= s.spawnWeight;
-                if (pick <= 0f) { current = s; break; }
+                if (!IsValid(s)) continue;
+                pick -= s.SpawnWeight;
+                if (pick <= 0f) { current = s.Roll(); return true; }
             }
-            currentWeight = Random.Range(current.weightKgRange.x, current.weightKgRange.y);
-            return true;
+            return false;
         }
+
+        static bool IsValid(FishSpecies s) => s != null && s.behaviour != null && s.modelPrefab != null;
 
         void Hook()
         {
             Line.Bobber.ClearSink();
             rod.SendHaptic(1f, 0.3f, true);
-            SpawnHookedModel();
             SetState(FishBiteState.Hooked);
-            onHooked?.Invoke(current, currentWeight);
+            if (debugLogs) Debug.Log($"[Fish] Hooked {current}");
+            onHooked?.Invoke(current);
+            fight.Begin(current, Line.Hook.position, OnFightFinished);
         }
 
-        void Catch()
+        void OnFightFinished(FightResult result)
         {
-            if (debugLogs) Debug.Log($"[Fish] Caught {current.displayName} ({currentWeight:0.00} kg)");
-            onCaught?.Invoke(current, currentWeight);
-            caughtModel = hookedModel;
-            hookedModel = null;
             timer = escapeCooldown;
-            SetState(FishBiteState.Caught);
+            SetState(result == FightResult.Caught ? FishBiteState.Caught : FishBiteState.Escaped);
         }
 
         void Escape(string reason)
         {
-            if (debugLogs) Debug.Log($"[Fish] {current?.displayName} escaped: {reason}");
+            if (debugLogs) Debug.Log($"[Fish] {current?.species.displayName} escaped: {reason}");
             Line.Bobber.ClearSink();
             onEscaped?.Invoke(current);
             timer = escapeCooldown;
             SetState(FishBiteState.Escaped);
         }
 
-        void SpawnHookedModel()
-        {
-            var hook = Line.Hook;
-            if (current.modelPrefab == null || hook == null)
-                return;
-
-            hookedModel = HangingFish.Create(current.modelPrefab, hook).gameObject;
-        }
-
         void SetState(FishBiteState newState)
         {
             if (debugLogs && newState != state)
-                Debug.Log($"[Fish] {state} -> {newState}" + (current != null ? $" ({current.displayName})" : ""));
+                Debug.Log($"[Fish] {state} -> {newState}" + (current != null ? $" ({current.species.displayName})" : ""));
             state = newState;
         }
+
+        static float RandomRange(Vector2 r) => Random.Range(r.x, r.y);
     }
 }

@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e66e86a29c5d794b803fef6810b9107, type: 3}
   m_Name: FS_Walleye
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishSpecies
+  id: walleye
   displayName: "Dor\xE9 jaune"
+  description: "M\xE9fiant, il touche l'app\xE2t plusieurs fois avant de le prendre."
+  icon: {fileID: 0}
+  rarity: 1
+  spawnWeightOverride: 0
   modelPrefab: {fileID: 919132149155446097, guid: cdf082f3b5a0cb74d9e8c7872cd1cecd, type: 3}
-  spawnWeight: 2
-  weightKgRange: {x: 0.8, y: 4}
-  approachDelay: {x: 3, y: 8}
-  nibbleCount: {x: 1, y: 4}
-  nibbleInterval: {x: 0.6, y: 1.5}
-  biteWindow: 1
-  biteSinkDepth: 0.25
+  lengthCmRange: {x: 35, y: 75}
+  weightKgRange: {x: 0.8, y: 4.5}
+  sizeRarityBias: 2
+  valuePerKg: 18
+  behaviour: {fileID: 11400000, guid: 866a07d685f15e146ae11ebd4efc60d5, type: 2}

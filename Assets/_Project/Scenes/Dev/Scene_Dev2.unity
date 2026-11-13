@@ -152,6 +152,7 @@ Transform:
   - {fileID: 300992741}
   - {fileID: 1028963181}
   - {fileID: 1814725286}
+  - {fileID: 444337569}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &166180434
@@ -369,6 +370,68 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 300992740}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &444337568
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 56691604}
+    m_Modifications:
+    - target: {fileID: 5039668078185147574, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_Name
+      value: Epuisette
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+--- !u!4 &444337569 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8940303003581523678, guid: d9c4b8995c6e5944f99feadd443d0ec3, type: 3}
+  m_PrefabInstance: {fileID: 444337568}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &708102856
 GameObject:
   m_ObjectHideFlags: 0
@@ -633,6 +696,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1814725286}
   - component: {fileID: 1814725287}
+  - component: {fileID: 1814725288}
   m_Layer: 0
   m_Name: Fish Bite AI
   m_TagString: Untagged
@@ -690,7 +754,35 @@ MonoBehaviour:
   onEscaped:
     m_PersistentCalls:
       m_Calls: []
-  onCaught:
+--- !u!114 &1814725288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1814725285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68b9e5ec3ed19c54cadf770b1bc624ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishFight
+  rod: {fileID: 1028963180}
+  handCatchMaxKg: 5
+  landingRange: 2.5
+  nettableStaminaRatio: 0.35
+  counterTensionReduction: 0.35
+  counterFatigueBonus: 1
+  hapticInterval: 0.08
+  onTensionChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onPhaseChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onLineBroken:
+    m_PersistentCalls:
+      m_Calls: []
+  onFishCaught:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &1865678581
