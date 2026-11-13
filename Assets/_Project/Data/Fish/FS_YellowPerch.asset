@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e66e86a29c5d794b803fef6810b9107, type: 3}
+  m_Name: FS_YellowPerch
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishSpecies
+  displayName: Perchaude
+  modelPrefab: {fileID: 919132149155446097, guid: 951f091b4a53a184d93371f5e012ab44, type: 3}
+  spawnWeight: 4
+  weightKgRange: {x: 0.1, y: 0.4}
+  approachDelay: {x: 3, y: 8}
+  nibbleCount: {x: 1, y: 4}
+  nibbleInterval: {x: 0.6, y: 1.5}
+  biteWindow: 1.4
+  biteSinkDepth: 0.15
