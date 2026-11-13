@@ -209,20 +209,7 @@ namespace FishingVR.Fish
             if (current.modelPrefab == null || hook == null)
                 return;
 
-            hookedModel = Instantiate(current.modelPrefab, hook);
-            // Models face +Z: hang the fish nose up, mouth on the hook.
-            hookedModel.transform.localRotation = Quaternion.LookRotation(Vector3.up, Vector3.back);
-            var mouth = hookedModel.transform.Find("SOCKET_Mouth") ?? FindDeep(hookedModel.transform, "SOCKET_Mouth");
-            hookedModel.transform.localPosition = Vector3.zero;
-            if (mouth != null)
-                hookedModel.transform.position += hook.position - mouth.position;
-        }
-
-        static Transform FindDeep(Transform root, string name)
-        {
-            foreach (var t in root.GetComponentsInChildren<Transform>(true))
-                if (t.name == name) return t;
-            return null;
+            hookedModel = HangingFish.Create(current.modelPrefab, hook).gameObject;
         }
 
         void SetState(FishBiteState newState)
