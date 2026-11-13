@@ -469,8 +469,8 @@ MonoBehaviour:
   crankPivot: {fileID: 7006441718825946112}
   crankLocalAxis: {x: 1, y: 0, z: 0}
   spool: {fileID: 6936679697034745970}
-  spoolLocalAxis: {x: 0, y: 1, z: 0}
-  spoolSpeedRatio: 5
+  spoolLocalAxis: {x: 1, y: 0, z: 0}
+  spoolSpeedRatio: 1
   metersPerTurn: 0.7
   reelInDirection: 1
   antiReverse: 1

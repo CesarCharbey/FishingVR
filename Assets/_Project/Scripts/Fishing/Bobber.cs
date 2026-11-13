@@ -61,7 +61,9 @@ namespace FishingVR.Fishing
             if (depth <= 0f)
                 return;
 
-            body.AddForce(Vector3.up * (buoyancy * Mathf.Min(depth, 0.5f)), ForceMode.Acceleration);
+            // Cancel gravity once under the float line, plus a spring: the bobber rests with its
+            // pivot on the float line (top half visible) instead of sinking until buoyancy = g.
+            body.AddForce(Vector3.up * (-Physics.gravity.y + buoyancy * Mathf.Min(depth, 0.5f)), ForceMode.Acceleration);
             body.AddForce(-body.linearVelocity * waterDrag, ForceMode.Acceleration);
             body.AddTorque(-body.angularVelocity * waterAngularDrag, ForceMode.Acceleration);
 

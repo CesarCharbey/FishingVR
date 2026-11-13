@@ -49,6 +49,7 @@ namespace FishingVR.Fish
         float timer;
         int nibblesLeft;
         GameObject hookedModel;
+        GameObject caughtModel;
 
         public FishBiteState State => state;
         public FishSpecies CurrentSpecies => current;
@@ -57,12 +58,24 @@ namespace FishingVR.Fish
 
         void OnEnable()
         {
-            if (rod != null) rod.onHookSetGesture.AddListener(OnHookSetGesture);
+            if (rod == null) return;
+            rod.onHookSetGesture.AddListener(OnHookSetGesture);
+            rod.onCast.AddListener(OnRodCast);
         }
 
         void OnDisable()
         {
-            if (rod != null) rod.onHookSetGesture.RemoveListener(OnHookSetGesture);
+            if (rod == null) return;
+            rod.onHookSetGesture.RemoveListener(OnHookSetGesture);
+            rod.onCast.RemoveListener(OnRodCast);
+        }
+
+        // A caught fish stays on the hook until the next cast (no bucket/bestiary yet).
+        void OnRodCast(Vector3 _)
+        {
+            if (caughtModel != null)
+                Destroy(caughtModel);
+            caughtModel = null;
         }
 
         void Update()
@@ -175,7 +188,7 @@ namespace FishingVR.Fish
         {
             if (debugLogs) Debug.Log($"[Fish] Caught {current.displayName} ({currentWeight:0.00} kg)");
             onCaught?.Invoke(current, currentWeight);
-            if (hookedModel != null) Destroy(hookedModel, 3f);
+            caughtModel = hookedModel;
             hookedModel = null;
             timer = escapeCooldown;
             SetState(FishBiteState.Caught);

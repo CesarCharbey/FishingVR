@@ -19,7 +19,8 @@ namespace FishingVR.Fishing
         [SerializeField] Vector3 crankLocalAxis = Vector3.right;
         [Tooltip("Optional spool spinning while reeling.")]
         [SerializeField] Transform spool;
-        [SerializeField] Vector3 spoolLocalAxis = Vector3.up;
+        [Tooltip("Spool's own axis (the spool mesh is a cylinder around its local X, same as the crank).")]
+        [SerializeField] Vector3 spoolLocalAxis = Vector3.right;
         [SerializeField] float spoolSpeedRatio = 5f;
 
         [Tooltip("Line retrieved per full crank turn (m). Gear ratio x spool circumference.")]
