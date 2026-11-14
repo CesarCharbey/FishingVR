@@ -836,6 +836,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Boat
       objectReference: {fileID: 0}
+    - target: {fileID: 6389896776155857051, guid: a724014caac7d4f40b22bfe6c2f1c22a, type: 3}
+      propertyPath: drawGizmos
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7752852318049403988, guid: a724014caac7d4f40b22bfe6c2f1c22a, type: 3}
+      propertyPath: maskHeight
+      value: 0.51
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

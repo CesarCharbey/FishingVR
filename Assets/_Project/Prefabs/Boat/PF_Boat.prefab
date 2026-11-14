@@ -110,6 +110,7 @@ GameObject:
   - component: {fileID: 1024502856803966381}
   - component: {fileID: 5639739777366761519}
   - component: {fileID: 6389896776155857051}
+  - component: {fileID: 7752852318049403988}
   m_Layer: 6
   m_Name: PF_Boat
   m_TagString: Untagged
@@ -179,6 +180,22 @@ MonoBehaviour:
   maxDepth: 0.6
   dampingRatio: 0.2
   drawGizmos: 1
+--- !u!114 &7752852318049403988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4119829530118619942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 953f15f144c35314887336ab9f5aaa6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatWaterMask
+  hull: {fileID: 2731369035562217641}
+  maskMaterial: {fileID: 2100000, guid: 8a86f0e528d31f74e88100dd5f70d940, type: 2}
+  maskHeight: 0.5
+  inset: 0
 --- !u!1 &6063496400993238682
 GameObject:
   m_ObjectHideFlags: 0
@@ -426,6 +443,11 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -7227567251688374955, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+--- !u!33 &2731369035562217641 stripped
+MeshFilter:
+  m_CorrespondingSourceObject: {fileID: 6453158240368312656, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8927055771948766738 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}

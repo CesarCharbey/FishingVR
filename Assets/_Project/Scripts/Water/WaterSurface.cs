@@ -7,6 +7,10 @@ namespace FishingVR.Water
     /// Concrete implementations: <see cref="FlatWaterSurface"/> for now, a wave-based one later.
     /// The active surface registers itself in <see cref="Current"/> so that prefabs
     /// (which cannot reference scene objects) can find it at runtime.
+    ///
+    /// Rendering constraint: the water material must stay in the Transparent render queue (>= 3000)
+    /// with a standard depth test, otherwise the boat's water mask (FishingVR/WaterMask shader)
+    /// cannot hide the water inside the hull.
     /// </summary>
     public abstract class WaterSurface : MonoBehaviour
     {
