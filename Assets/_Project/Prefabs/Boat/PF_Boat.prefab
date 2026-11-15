@@ -246,6 +246,61 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Dev.BoatKeyboardInput
   throttleLeverSpeed: 0.6
+--- !u!1 &4632980671019195990
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 627954604522188968}
+  - component: {fileID: 1967358665404083466}
+  m_Layer: 6
+  m_Name: GripCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &627954604522188968
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4632980671019195990}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.06975647, y: 0, z: 0, w: 0.9975641}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6369883864035806179}
+  m_LocalEulerAnglesHint: {x: 8, y: 0, z: 0}
+--- !u!136 &1967358665404083466
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4632980671019195990}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.05
+  m_Height: 0.29
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6063496400993238682
 GameObject:
   m_ObjectHideFlags: 0
@@ -379,6 +434,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1024502856803966381}
     m_Modifications:
     - target: {fileID: -9200791155805572363, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      propertyPath: m_Name
+      value: SM_Boat_Motor_Tiller
+      objectReference: {fileID: 0}
+    - target: {fileID: -9200791155805572363, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
@@ -459,13 +518,48 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: -9200791155805572363, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -6624897099211277798, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 627954604522188968}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: -1855819358213734530, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3827136063899946366}
+    - targetCorrespondingSourceObject: {fileID: -544213534668188235, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1992030982243310437}
   m_SourcePrefab: {fileID: 100100000, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+--- !u!1 &295949207079134284 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -544213534668188235, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
+--- !u!136 &1992030982243310437
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 295949207079134284}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.05
+  m_Height: 0.35
+  m_Direction: 1
+  m_Center: {x: 0, y: -0.5, z: 0.045}
 --- !u!1 &1898041501565734535 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1855819358213734530, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
@@ -501,6 +595,11 @@ MeshFilter:
 --- !u!4 &3217421598435431428 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -3400376643111361027, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6369883864035806179 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6624897099211277798, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
   m_PrefabInstance: {fileID: 8964974229462594041}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &8863744045268914029 stripped

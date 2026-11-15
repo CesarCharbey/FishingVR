@@ -49,6 +49,9 @@ namespace FishingVR.Boat
         /// <summary>Sideways force (N) of the water on the motor's lower unit, along the motor's right axis.</summary>
         public float LowerUnitForce { get; private set; }
 
+        /// <summary>Part of the motor that rotates to steer (its position is the steering axis).</summary>
+        public Transform MotorPivot => motorPivot;
+
         public BoatMotorSettings Settings
         {
             get => settings;
@@ -60,10 +63,16 @@ namespace FishingVR.Boat
         /// </summary>
         /// <param name="steer">-1 = turn left, +1 = turn right.</param>
         /// <param name="throttle">-1 = full reverse, 0 = idle, +1 = full forward.</param>
-        public void SetInput(float steer, float throttle)
+        /// <param name="immediateSteer">
+        /// True when the motor is moved by hand (VR tiller): the motor follows the request instantly
+        /// instead of turning at <see cref="BoatMotorSettings.steerResponse"/>, so it never lags behind the hand.
+        /// </param>
+        public void SetInput(float steer, float throttle, bool immediateSteer = false)
         {
             requestedSteer = Mathf.Clamp(steer, -1f, 1f);
             requestedThrottle = Mathf.Clamp(throttle, -1f, 1f);
+            if (immediateSteer && settings != null)
+                MotorAngle = -requestedSteer * settings.maxSteerAngle;
         }
 
         void Awake()
@@ -124,9 +133,10 @@ namespace FishingVR.Boat
             body.AddForceAtPosition(motorSide * LowerUnitForce, thrustPoint, ForceMode.Force);
         }
 
-        void Update()
+        void LateUpdate()
         {
             // Visuals only (the physics uses MotorAngle and Throttle directly).
+            // LateUpdate: runs after every input source (keyboard, VR tiller) has updated this frame.
             motorPivot.localRotation = Quaternion.AngleAxis(MotorAngle, steerAxisInMotorParent) * motorRestLocalRotation;
 
             if (IsPropellerSubmerged || !Mathf.Approximately(Throttle, 0f))
