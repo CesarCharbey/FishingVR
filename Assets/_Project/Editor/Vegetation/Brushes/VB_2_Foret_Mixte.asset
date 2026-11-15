@@ -39,7 +39,7 @@ MonoBehaviour:
     scale: {x: 1.4, y: 2.1}
     alignToNormal: 0
     sink: 0.2
-  density: 0.01
+  density: 0.02
   minSpacing: 4.5
   heightAboveWater: {x: 1.2, y: 400}
   maxSlope: 30
