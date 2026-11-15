@@ -3,7 +3,7 @@ using UnityEngine;
 namespace FishingVR.Fishing
 {
     /// <summary>
-    /// Floating bobber: simple buoyancy against <see cref="WaterLevel"/> plus helpers
+    /// Floating bobber: simple buoyancy against the scene <see cref="FishingVR.Water.WaterSurface"/> plus helpers
     /// the fish uses to make it dip (nibble) or sink (bite).
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
@@ -29,7 +29,7 @@ namespace FishingVR.Fishing
         public Transform LineTop => lineTop != null ? lineTop : transform;
         public Transform LineBottom => lineBottom != null ? lineBottom : transform;
 
-        public bool IsInWater => transform.position.y <= WaterLevel.CurrentHeight + floatOffset + 0.02f;
+        public bool IsInWater => transform.position.y <= FishingWater.HeightAt(transform.position) + floatOffset + 0.02f;
 
         /// <summary>True when the bobber floats and barely moves (ready for a fish).</summary>
         public bool IsSettled => IsInWater && Body.linearVelocity.sqrMagnitude < 0.04f;
@@ -56,7 +56,7 @@ namespace FishingVR.Fishing
                     extraSink = 0f;
             }
 
-            var surface = WaterLevel.CurrentHeight + floatOffset - extraSink;
+            var surface = FishingWater.HeightAt(transform.position) + floatOffset - extraSink;
             var depth = surface - transform.position.y;
             if (depth <= 0f)
                 return;

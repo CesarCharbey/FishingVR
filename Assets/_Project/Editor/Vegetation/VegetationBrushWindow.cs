@@ -195,8 +195,9 @@ namespace FishingVR.EditorTools
         {
             get
             {
-                var w = Object.FindFirstObjectByType<WaterLevel>();
-                return w != null ? w.Height : 0f;
+                // Edit mode: WaterSurface.Current is only set in play mode, so look the surface up.
+                var w = Object.FindFirstObjectByType<FishingVR.Water.WaterSurface>();
+                return w != null ? w.GetHeight(Vector3.zero) : 0f;
             }
         }
 

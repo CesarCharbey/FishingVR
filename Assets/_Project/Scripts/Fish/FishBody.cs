@@ -180,7 +180,7 @@ namespace FishingVR.Fish
             if (mode == Mode.Free && !IsGrabbed)
             {
                 // Dropped back in the lake: it swims away.
-                if (transform.position.y < WaterLevel.CurrentHeight - 0.2f)
+                if (transform.position.y < FishingWater.HeightAt(transform.position) - 0.2f)
                 {
                     if (releasedTimer < 0f) releasedTimer = 2f;
                     releasedTimer -= Time.deltaTime;

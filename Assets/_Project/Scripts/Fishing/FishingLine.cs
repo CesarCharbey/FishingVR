@@ -257,7 +257,7 @@ namespace FishingVR.Fishing
             // held at the surface while the fish is under water.
             var toTip = rodTip.position - fightHookPosition;
             var bob = fightHookPosition + toTip.normalized * Mathf.Min(hookDepth, toTip.magnitude * 0.5f);
-            var water = WaterLevel.CurrentHeight;
+            var water = FishingWater.HeightAt(fightHookPosition);
             if (!fishLifted && bob.y < water)
                 bob.y = water - Mathf.Clamp01(fightTension) * 0.1f; // pulled a bit under when taut
             var t = bobber.transform;

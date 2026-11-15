@@ -86,7 +86,7 @@ namespace FishingVR.Fish
 
         FishingLine Line => rod.Line;
         RodStats Stats => rod.Stats;
-        float Water => WaterLevel.CurrentHeight;
+        float Water => FishingWater.HeightAt(position);
 
         /// <summary>Start the fight with a freshly hooked fish whose mouth is at <paramref name="hookPosition"/>.</summary>
         public void Begin(FishInstance hookedFish, Vector3 hookPosition, Action<FightResult> finished)
