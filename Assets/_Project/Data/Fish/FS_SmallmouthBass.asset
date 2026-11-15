@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e66e86a29c5d794b803fef6810b9107, type: 3}
   m_Name: FS_SmallmouthBass
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishSpecies
+  id: smallmouthbass
   displayName: "Achigan \xE0 petite bouche"
+  description: Combatif pour sa taille, il change souvent de direction.
+  icon: {fileID: 0}
+  rarity: 0
+  spawnWeightOverride: 0
   modelPrefab: {fileID: 919132149155446097, guid: 986ed0b76026f324eae10607ed74f36b, type: 3}
-  spawnWeight: 3
-  weightKgRange: {x: 0.4, y: 2}
-  approachDelay: {x: 3, y: 8}
-  nibbleCount: {x: 1, y: 4}
-  nibbleInterval: {x: 0.6, y: 1.5}
-  biteWindow: 1.2
-  biteSinkDepth: 0.2
+  lengthCmRange: {x: 25, y: 50}
+  weightKgRange: {x: 0.4, y: 2.2}
+  sizeRarityBias: 2
+  valuePerKg: 12
+  behaviour: {fileID: 11400000, guid: 77545834f3186ab4a964662e18c979e6, type: 2}

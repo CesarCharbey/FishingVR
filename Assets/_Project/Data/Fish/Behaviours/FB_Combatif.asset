@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f818f39938bc73c4795fc6ee5d99bf42, type: 3}
+  m_Name: FB_Combatif
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishBehaviourProfile
+  approachDelay: {x: 3, y: 8}
+  nibbleCount: {x: 1, y: 3}
+  nibbleInterval: {x: 0.6, y: 1.5}
+  biteWindow: 1.1
+  biteSinkDepth: 0.25
+  pullPerKg: 8
+  restPull: 0.3
+  exhaustedPull: 0.08
+  pullJitter: 0.2
+  baseStamina: 5
+  staminaPerKg: 1.5
+  restRecovery: 0.5
+  exhaustedRecovery: 0.15
+  wakeUpRatio: 0.3
+  swimSpeed: 3
+  rushDuration: {x: 1.5, y: 3.5}
+  restDuration: {x: 1, y: 2.5}
+  headingChangeInterval: {x: 0.6, y: 1.8}
+  depthRange: {x: 0.8, y: 1.8}

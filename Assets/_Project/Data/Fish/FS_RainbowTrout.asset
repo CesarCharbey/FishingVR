@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e66e86a29c5d794b803fef6810b9107, type: 3}
   m_Name: FS_RainbowTrout
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishSpecies
+  id: rainbowtrout
   displayName: Truite arc-en-ciel
+  description: "Rapide et nerveuse, elle aime les eaux fra\xEEches."
+  icon: {fileID: 0}
+  rarity: 1
+  spawnWeightOverride: 0
   modelPrefab: {fileID: 919132149155446097, guid: cb56c1474077bc942841e1135fc6d6f9, type: 3}
-  spawnWeight: 3
-  weightKgRange: {x: 0.5, y: 3}
-  approachDelay: {x: 3, y: 8}
-  nibbleCount: {x: 1, y: 4}
-  nibbleInterval: {x: 0.6, y: 1.5}
-  biteWindow: 1
-  biteSinkDepth: 0.2
+  lengthCmRange: {x: 30, y: 70}
+  weightKgRange: {x: 0.5, y: 3.5}
+  sizeRarityBias: 2
+  valuePerKg: 15
+  behaviour: {fileID: 11400000, guid: 77545834f3186ab4a964662e18c979e6, type: 2}

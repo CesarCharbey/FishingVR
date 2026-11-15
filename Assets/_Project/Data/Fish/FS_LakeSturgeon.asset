@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e66e86a29c5d794b803fef6810b9107, type: 3}
   m_Name: FS_LakeSturgeon
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishSpecies
+  id: lakesturgeon
   displayName: Esturgeon jaune
+  description: "G\xE9ant ancestral du lac. Un combat d'endurance, l'\xE9puisette est indispensable."
+  icon: {fileID: 0}
+  rarity: 4
+  spawnWeightOverride: 0
   modelPrefab: {fileID: 919132149155446097, guid: 962e8e79128ecf146b5a341847263ece, type: 3}
-  spawnWeight: 0.3
-  weightKgRange: {x: 5, y: 25}
-  approachDelay: {x: 3, y: 8}
-  nibbleCount: {x: 1, y: 4}
-  nibbleInterval: {x: 0.6, y: 1.5}
-  biteWindow: 0.7
-  biteSinkDepth: 0.35
+  lengthCmRange: {x: 100, y: 180}
+  weightKgRange: {x: 8, y: 30}
+  sizeRarityBias: 2
+  valuePerKg: 35
+  behaviour: {fileID: 11400000, guid: 4f5002f54056ef94788750ca978081df, type: 2}

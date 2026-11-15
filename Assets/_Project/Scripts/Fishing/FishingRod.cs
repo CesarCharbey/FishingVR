@@ -22,6 +22,8 @@ namespace FishingVR.Fishing
         [SerializeField] Transform rodTip;
         [SerializeField] FishingLine line;
         [SerializeField] ReelCrank reel;
+        [Tooltip("Line strength, drag... (upgradeable equipment).")]
+        [SerializeField] RodStats stats;
 
         [Header("Cast")]
         [Tooltip("Minimum tip speed (m/s) at trigger release to cast.")]
@@ -59,6 +61,12 @@ namespace FishingVR.Fishing
         public Transform RodTip => rodTip;
         public FishingLine Line => line;
         public ReelCrank Reel => reel;
+        public RodStats Stats => stats;
+
+        /// <summary>Current line tension, 0..1 of the line strength (set by the fight, read by the bend / gauge).</summary>
+        public float LineTension { get; set; }
+        /// <summary>World point the line pulls toward (hook / fish).</summary>
+        public Vector3 LinePullPoint { get; set; }
         public bool IsHeld => grab != null && grab.isSelected;
         public bool IsTwoHanded => grab != null && grab.interactorsSelecting.Count > 1;
         public IXRSelectInteractor MainHand => grab != null ? grab.firstInteractorSelecting : null;
