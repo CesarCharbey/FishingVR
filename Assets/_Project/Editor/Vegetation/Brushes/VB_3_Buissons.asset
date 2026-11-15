@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aad46946e990c64c81acbb6dc9128a3, type: 3}
+  m_Name: VB_3_Buissons
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::FishingVR.EditorTools.VegetationBrushPreset
+  mode: 0
+  entries:
+  - prefab: {fileID: 919132149155446097, guid: 5e54928c7600f4342879af11a9a2f5c4, type: 3}
+    weight: 1
+    scale: {x: 0.8, y: 1.5}
+    alignToNormal: 0.5
+    sink: 0.1
+  - prefab: {fileID: 919132149155446097, guid: 664bf2a99da7b0d48aa89dd0c5f38d25, type: 3}
+    weight: 1.2
+    scale: {x: 0.8, y: 1.6}
+    alignToNormal: 0.5
+    sink: 0.05
+  density: 0.025
+  minSpacing: 2
+  heightAboveWater: {x: 0.4, y: 400}
+  maxSlope: 35
+  placeOnWaterSurface: 0
+  minWaterDepth: 0.3
+  randomYaw: 1
+  groupName: Bushes
+  brushColor: {r: 0.4, g: 0.8, b: 0.35, a: 1}
