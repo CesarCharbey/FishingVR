@@ -114,6 +114,7 @@ GameObject:
   - component: {fileID: 4499970930747238824}
   - component: {fileID: 4893530751315083323}
   - component: {fileID: 3400583707852073900}
+  - component: {fileID: 5391740046034347575}
   m_Layer: 6
   m_Name: PF_Boat
   m_TagString: Untagged
@@ -246,6 +247,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Dev.BoatKeyboardInput
   throttleLeverSpeed: 0.6
+--- !u!114 &5391740046034347575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4119829530118619942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccf49ac07d921ca44888da7941abde84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatSeat
+  seat: {fileID: 1502175410859984330}
+  sideOffset: -0.35
+  seatHeight: 0.5
+  tiltFollow: 0.25
+  mountOnStart: 1
 --- !u!1 &4632980671019195990
 GameObject:
   m_ObjectHideFlags: 0
@@ -619,6 +637,11 @@ MonoBehaviour:
   returnSpeed: 90
   idleRumble: 0.02
   throttleRumble: 0.12
+--- !u!4 &1502175410859984330 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1898041501565734535 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1855819358213734530, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
