@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f818f39938bc73c4795fc6ee5d99bf42, type: 3}
   m_Name: FB_Prudent
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishBehaviourProfile
-  approachDelay: {x: 5, y: 10}
-  nibbleCount: {x: 3, y: 6}
-  nibbleInterval: {x: 0.6, y: 1.5}
+  approachDelay: {x: 4, y: 9}
+  spawnDistance: {x: 6, y: 9}
+  spawnDepth: {x: 2.5, y: 3.5}
+  cruiseSpeed: 0.6
+  circleRadius: {x: 0.9, y: 1.4}
+  circleLaps: {x: 2, y: 3}
+  nibbleCount: {x: 3, y: 5}
+  nibbleInterval: {x: 0.8, y: 1.6}
   biteWindow: 0.9
   biteSinkDepth: 0.25
   pullPerKg: 6
-  restPull: 0.3
-  exhaustedPull: 0.08
-  pullJitter: 0.2
-  baseStamina: 6
-  staminaPerKg: 1.2
-  restRecovery: 0.5
-  exhaustedRecovery: 0.15
-  wakeUpRatio: 0.3
-  swimSpeed: 2.2
-  rushDuration: {x: 1.5, y: 3}
-  restDuration: {x: 1.5, y: 3}
-  headingChangeInterval: {x: 0.6, y: 1.8}
-  depthRange: {x: 1.5, y: 2.5}
+  runSpeed: 4
+  lateralSpeed: 2
+  lateralRange: 5
+  directionChangeInterval: {x: 1.5, y: 3}
+  depthRange: {x: 1.2, y: 2}
+  struggleStamina: 4.5
+  staminaPerKg: 0.5
+  fatigueCycles: {x: 2, y: 3}

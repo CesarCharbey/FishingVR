@@ -13,21 +13,21 @@ MonoBehaviour:
   m_Name: FB_Colosse
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishBehaviourProfile
   approachDelay: {x: 8, y: 15}
+  spawnDistance: {x: 6, y: 9}
+  spawnDepth: {x: 2.5, y: 3.5}
+  cruiseSpeed: 0.5
+  circleRadius: {x: 1.2, y: 1.8}
+  circleLaps: {x: 1.5, y: 2.5}
   nibbleCount: {x: 2, y: 4}
-  nibbleInterval: {x: 0.6, y: 1.5}
+  nibbleInterval: {x: 1, y: 2}
   biteWindow: 1
   biteSinkDepth: 0.25
   pullPerKg: 3.5
-  restPull: 0.3
-  exhaustedPull: 0.08
-  pullJitter: 0.2
-  baseStamina: 15
-  staminaPerKg: 1
-  restRecovery: 0.8
-  exhaustedRecovery: 0.15
-  wakeUpRatio: 0.3
-  swimSpeed: 1.5
-  rushDuration: {x: 3, y: 6}
-  restDuration: {x: 1, y: 2}
-  headingChangeInterval: {x: 0.6, y: 1.8}
-  depthRange: {x: 2, y: 3}
+  runSpeed: 3
+  lateralSpeed: 1.8
+  lateralRange: 8
+  directionChangeInterval: {x: 2, y: 4}
+  depthRange: {x: 1.8, y: 2.6}
+  struggleStamina: 6
+  staminaPerKg: 0.25
+  fatigueCycles: {x: 3, y: 3}

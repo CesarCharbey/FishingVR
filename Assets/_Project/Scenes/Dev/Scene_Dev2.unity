@@ -739,6 +739,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2ca8927640c81aa45a4ec3950a953d50, type: 2}
   - {fileID: 11400000, guid: 3c258678517c90a46913aa974cc06b22, type: 2}
   - {fileID: 11400000, guid: 3663293414c4cb14cbc23e6575ae663a, type: 2}
+  underwaterMaterial: {fileID: 2100000, guid: df661b333fe768d408216a1ed5fc7e85, type: 2}
   escapeCooldown: 2
   nibbleDipDepth: 0.04
   debugLogs: 1
@@ -767,16 +768,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishFight
   rod: {fileID: 1028963180}
+  landingDistance: 3
+  reelAllowanceTurns: 0.5
+  slackTimeout: 5
+  exhaustedMaxDuration: 12
+  staminaRecoverRatio: 0.75
+  fullCounterSide: 0.35
+  goodCounter: 0.3
+  wrongTensionRate: 0.9
+  relaxRate: 0.6
+  overReelTensionPerMeter: 1
+  overspeedTensionRate: 0.5
   handCatchMaxKg: 5
-  landingRange: 2.5
-  nettableStaminaRatio: 0.35
-  counterTensionReduction: 0.35
-  counterFatigueBonus: 1
   hapticInterval: 0.08
+  warningTension: 0.7
   onTensionChanged:
     m_PersistentCalls:
       m_Calls: []
   onPhaseChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onTensionWarning:
     m_PersistentCalls:
       m_Calls: []
   onLineBroken:
