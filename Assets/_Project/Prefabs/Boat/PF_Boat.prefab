@@ -114,6 +114,7 @@ GameObject:
   - component: {fileID: 4499970930747238824}
   - component: {fileID: 4893530751315083323}
   - component: {fileID: 3400583707852073900}
+  - component: {fileID: 5391740046034347575}
   m_Layer: 6
   m_Name: PF_Boat
   m_TagString: Untagged
@@ -246,6 +247,78 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Dev.BoatKeyboardInput
   throttleLeverSpeed: 0.6
+--- !u!114 &5391740046034347575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4119829530118619942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccf49ac07d921ca44888da7941abde84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatSeat
+  seat: {fileID: 1502175410859984330}
+  sideOffset: -0.35
+  seatHeight: 0.5
+  tiltFollow: 0.25
+  mountOnStart: 1
+--- !u!1 &4632980671019195990
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 627954604522188968}
+  - component: {fileID: 1967358665404083466}
+  m_Layer: 0
+  m_Name: GripCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &627954604522188968
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4632980671019195990}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.06975647, y: 0, z: 0, w: 0.9975641}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6369883864035806179}
+  m_LocalEulerAnglesHint: {x: 8, y: 0, z: 0}
+--- !u!136 &1967358665404083466
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4632980671019195990}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.05
+  m_Height: 0.29
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6063496400993238682
 GameObject:
   m_ObjectHideFlags: 0
@@ -379,6 +452,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1024502856803966381}
     m_Modifications:
     - target: {fileID: -9200791155805572363, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      propertyPath: m_Name
+      value: SM_Boat_Motor_Tiller
+      objectReference: {fileID: 0}
+    - target: {fileID: -9200791155805572363, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
@@ -459,13 +536,112 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: -9200791155805572363, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -6624897099211277798, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 627954604522188968}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: -1855819358213734530, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3827136063899946366}
+    - targetCorrespondingSourceObject: {fileID: -544213534668188235, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6045847459551351054}
   m_SourcePrefab: {fileID: 100100000, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+--- !u!1 &295949207079134284 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -544213534668188235, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6045847459551351054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 295949207079134284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29983ea9d52c8554596db294c56b1a65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.TillerInteractable
+  m_InteractionManager: {fileID: 0}
+  m_Colliders: []
+  m_InteractionLayers:
+    m_Bits: 1
+  m_DistanceCalculationMode: 1
+  m_SelectMode: 0
+  m_FocusMode: 1
+  m_CustomReticle: {fileID: 0}
+  m_AllowGazeInteraction: 0
+  m_AllowGazeSelect: 0
+  m_OverrideGazeTimeToSelect: 0
+  m_GazeTimeToSelect: 0.5
+  m_OverrideTimeToAutoDeselectGaze: 0
+  m_TimeToAutoDeselectGaze: 3
+  m_AllowGazeAssistance: 0
+  m_FirstHoverEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_LastHoverExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_HoverEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_HoverExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FirstSelectEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_LastSelectExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_SelectEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_SelectExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FirstFocusEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_LastFocusExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FocusEntered:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FocusExited:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Activated:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Deactivated:
+    m_PersistentCalls:
+      m_Calls: []
+  m_StartingHoverFilters: []
+  m_StartingSelectFilters: []
+  m_StartingInteractionStrengthFilters: []
+  m_AutoFindParentInteractableInHierarchy: 0
+  m_ParentInteractableObject: {fileID: 0}
+  motor: {fileID: 0}
+  maxLiftAngle: 25
+  maxDropAngle: 15
+  idleDeadZone: 3
+  releaseToIdle: 1
+  returnSpeed: 90
+  idleRumble: 0.02
+  throttleRumble: 0.12
+--- !u!4 &1502175410859984330 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1898041501565734535 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1855819358213734530, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
@@ -501,6 +677,11 @@ MeshFilter:
 --- !u!4 &3217421598435431428 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -3400376643111361027, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+  m_PrefabInstance: {fileID: 8964974229462594041}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6369883864035806179 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6624897099211277798, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
   m_PrefabInstance: {fileID: 8964974229462594041}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &8863744045268914029 stripped

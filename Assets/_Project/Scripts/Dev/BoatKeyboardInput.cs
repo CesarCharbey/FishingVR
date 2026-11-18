@@ -60,8 +60,17 @@ namespace FishingVR.Dev
                 ResetBoat();
 
             float steer = (keyboard.rightArrowKey.isPressed ? 1f : 0f) - (keyboard.leftArrowKey.isPressed ? 1f : 0f);
-            motor.SetInput(steer, throttleLever);
+
+            // Only drive the motor while the keyboard is in use (plus one frame after, to recenter the
+            // steering), so that the VR tiller keeps control the rest of the time: last input wins.
+            bool keyboardActive = leverInput != 0f || steer != 0f
+                                  || keyboard.slashKey.wasPressedThisFrame || keyboard.rKey.wasPressedThisFrame;
+            if (keyboardActive || wasKeyboardActive)
+                motor.SetInput(steer, throttleLever);
+            wasKeyboardActive = keyboardActive;
         }
+
+        bool wasKeyboardActive;
 
         void OnGUI()
         {
