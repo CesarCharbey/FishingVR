@@ -196,7 +196,7 @@ namespace FishingVR.EditorTools
             get
             {
                 // Edit mode: WaterSurface.Current is only set in play mode, so look the surface up.
-                var w = Object.FindFirstObjectByType<FishingVR.Water.WaterSurface>();
+                var w = Object.FindAnyObjectByType<FishingVR.Water.WaterSurface>();
                 return w != null ? w.GetHeight(Vector3.zero) : 0f;
             }
         }
@@ -286,8 +286,15 @@ namespace FishingVR.EditorTools
                     var go = (GameObject)PrefabUtility.InstantiatePrefab(entry.prefab, group);
                     go.transform.SetPositionAndRotation(pos, rot * entry.prefab.transform.rotation);
                     go.transform.localScale = entry.prefab.transform.localScale * scale;
-                    GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+                    if (preset.markStatic)
+                        GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
                     Undo.RegisterCreatedObjectUndo(go, "Pinceau de végétation");
+                    switch (preset.collider)
+                    {
+                        case VegetationBrushPreset.ColliderMode.Trunk: MapColliderTools.AddTrunkCollider(go); break;
+                        case VegetationBrushPreset.ColliderMode.Mesh: MapColliderTools.AddMeshColliders(go); break;
+                    }
+                    if (preset.placeOnWaterSurface) MapColliderTools.SetupFloatingPlants(group.gameObject);
                 }
                 hash.Add(pos);
                 toAdd--;
@@ -414,7 +421,7 @@ namespace FishingVR.EditorTools
 
         static InstancedVegetation FindInstancedHolder(bool create)
         {
-            var existing = Object.FindFirstObjectByType<InstancedVegetation>();
+            var existing = Object.FindAnyObjectByType<InstancedVegetation>();
             if (existing != null || !create)
             {
                 if (existing != null && existing.Data == null && create) existing.Data = CreateData();

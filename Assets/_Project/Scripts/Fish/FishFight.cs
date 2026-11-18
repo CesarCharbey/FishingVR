@@ -63,6 +63,14 @@ namespace FishingVR.Fish
         [SerializeField] float fullCounterSide = 0.35f;
         [Tooltip("Counter score above which the rod is 'well placed' (tension drops, the fish tires).")]
         [Range(0f, 1f)] [SerializeField] float goodCounter = 0.3f;
+        [Tooltip("Raising the rod also counters the fish (Sea of Thieves): elevation (deg) where it starts to count...")]
+        [SerializeField] float raisedRodStart = 30f;
+        [Tooltip("...and where it is a perfect counter. Lets you hold the fish when it crosses the middle.")]
+        [SerializeField] float raisedRodFull = 55f;
+        [Tooltip("How fast a better rod position is taken into account (1/s).")]
+        [SerializeField] float counterRiseRate = 12f;
+        [Tooltip("How fast a worse rod position is taken into account (1/s): a short grace while you swing the rod over.")]
+        [SerializeField] float counterFallRate = 3f;
 
         [Header("Tension (0..1, snaps at 1)")]
         [Tooltip("Tension per second with the rod pointing with the fish (scaled by fish strength / rod).")]
@@ -111,6 +119,7 @@ namespace FishingVR.Fish
         Vector3 head;
         float tension, overTimer, hapticTimer;
         float counter;
+        float smoothedCounter;
         float reeledThisFrame;
         bool warning;
 
@@ -219,7 +228,10 @@ namespace FishingVR.Fish
                     // Swims sideways while pulling away: it turns through 'away', never toward the angler.
                     facing = right * lateralVelocity + axis * (B.lateralSpeed * 0.6f);
 
-                    counter = ComputeCounter();
+                    var rawCounter = ComputeCounter();
+                    smoothedCounter = Mathf.MoveTowards(smoothedCounter, rawCounter,
+                        (rawCounter > smoothedCounter ? counterRiseRate : counterFallRate) * dt);
+                    counter = smoothedCounter;
                     if (counter >= goodCounter)
                     {
                         tension -= relaxRate * dt;
@@ -322,6 +334,7 @@ namespace FishingVR.Fish
 
         void StartStruggle()
         {
+            smoothedCounter = 0.5f; // neutral-good start, the player gets a moment to react
             direction = UnityEngine.Random.value < 0.5f ? -1 : 1;
             switchTimer = RandomRange(B.directionChangeInterval);
             allowance = reelAllowanceTurns * (rod.Reel != null ? rod.Reel.MetersPerTurn : 0.7f);
@@ -386,19 +399,32 @@ namespace FishingVR.Fish
         }
 
         /// <summary>
-        /// +1 when the rod points opposite to the fish's sideways movement, -1 when it follows it,
-        /// 0 when it points straight at the fish.
+        /// Rod placement score, -1..1. Sideways: +1 when the rod points opposite to the fish's sideways
+        /// movement, -1 when it follows it, 0 when it points straight at the fish. Raised: a rod held high
+        /// is a good counter whatever the side (Sea of Thieves), which covers the fish crossing the middle.
+        /// The best of the two counts.
         /// </summary>
         float ComputeCounter()
         {
             if (!float.IsNaN(DebugCounterOverride)) return Mathf.Clamp(DebugCounterOverride, -1f, 1f);
+            var fwd = rod.transform.forward;
+            var elevation = Mathf.Asin(Mathf.Clamp(fwd.y, -1f, 1f)) * Mathf.Rad2Deg;
+            var raised = Mathf.InverseLerp(raisedRodStart, raisedRodFull, elevation);
+
             var lineDir = Flat(head - anchor);
-            if (lineDir.sqrMagnitude < 1e-4f) return 0f;
+            if (lineDir.sqrMagnitude < 1e-4f) return raised;
             var r = Vector3.Cross(Vector3.up, lineDir.normalized);
-            var rodSide = Vector3.Dot(Flat(rod.transform.forward).normalized, r);
+            var flat = Flat(fwd);
+            // Sideways reading fades out as the rod gets vertical (its horizontal direction becomes noise).
+            var rodSide = flat.sqrMagnitude > 1e-4f ? Vector3.Dot(flat.normalized, r) * Mathf.Clamp01(flat.magnitude / 0.5f) : 0f;
             var move = Mathf.Abs(lateralVelocity) > 0.2f ? Mathf.Sign(lateralVelocity) : direction;
-            return Mathf.Clamp(-rodSide / fullCounterSide * move, -1f, 1f);
+            var sideways = Mathf.Clamp(-rodSide / fullCounterSide * move, -1f, 1f);
+            // A raised rod never makes it worse; a low rod following the fish still counts as wrong (-1).
+            return raised > 0f ? Mathf.Max(sideways, raised) : sideways;
         }
+
+        /// <summary>Rod elevation in degrees (for debug / UI).</summary>
+        public float RodElevation => Mathf.Asin(Mathf.Clamp(rod.transform.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
 
         void Feedback(float dt)
         {

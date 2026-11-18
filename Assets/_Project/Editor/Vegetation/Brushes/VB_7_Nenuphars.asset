@@ -31,5 +31,7 @@ MonoBehaviour:
   placeOnWaterSurface: 1
   minWaterDepth: 0.3
   randomYaw: 1
+  collider: 0
+  markStatic: 0
   groupName: LilyPads
   brushColor: {r: 0.3, g: 0.75, b: 0.5, a: 1}
