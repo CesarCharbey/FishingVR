@@ -4,7 +4,7 @@ namespace FishingVR.Fishing
 {
     /// <summary>
     /// Rod + line + reel characteristics (upgradeable equipment).
-    /// A weak rod can't land heavy fish: the line breaks above <see cref="lineStrength"/>.
+    /// A weak rod can't land heavy fish: the tension rises faster and lifting them out of water breaks the line.
     /// </summary>
     [CreateAssetMenu(menuName = "FishingVR/Rod Stats", fileName = "RS_NewRod")]
     public class RodStats : ScriptableObject
@@ -12,15 +12,14 @@ namespace FishingVR.Fishing
         public string displayName = "Canne de base";
         public int level = 1;
 
-        [Tooltip("Tension (N) above which the line breaks. Also the max weight it can lift out of water (N = kg x 9.81).")]
+        [Tooltip("Line strength (N). Fish strength (kg x pullPerKg) is compared to it, and lifting a fish out of " +
+                 "the water costs its weight (kg x 9.81 N).")]
         public float lineStrength = 45f;
-        [Tooltip("Fraction of the line strength where the reel drag lets line out (when not reeling).")]
-        [Range(0.1f, 1f)] public float dragRatio = 0.65f;
-        [Tooltip("Extra tension (N) per crank turn/second when reeling against a pulling fish.")]
-        public float reelTensionPerTurnPerSecond = 20f;
-        [Tooltip("Seconds the tension can stay above the limit before the line snaps.")]
-        public float breakGraceTime = 0.25f;
-
-        public float DragTension => lineStrength * dragRatio;
+        [Tooltip("A hooked fish always pulls the line out to this distance (m) before fighting.")]
+        public float fightDistance = 18f;
+        [Tooltip("Cranking faster than this (turns/s) strains the line.")]
+        public float maxCrankSpeed = 2.2f;
+        [Tooltip("Seconds the tension can stay at the limit before the line snaps.")]
+        public float breakGraceTime = 0.15f;
     }
 }

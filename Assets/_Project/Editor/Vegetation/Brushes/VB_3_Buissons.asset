@@ -31,5 +31,7 @@ MonoBehaviour:
   placeOnWaterSurface: 0
   minWaterDepth: 0.3
   randomYaw: 1
+  collider: 0
+  markStatic: 1
   groupName: Bushes
   brushColor: {r: 0.4, g: 0.8, b: 0.35, a: 1}

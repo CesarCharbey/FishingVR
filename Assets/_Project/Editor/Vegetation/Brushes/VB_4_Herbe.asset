@@ -26,5 +26,7 @@ MonoBehaviour:
   placeOnWaterSurface: 0
   minWaterDepth: 0.3
   randomYaw: 1
+  collider: 0
+  markStatic: 1
   groupName: Grass
   brushColor: {r: 0.65, g: 0.95, b: 0.3, a: 1}

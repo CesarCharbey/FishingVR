@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7006441718825946112}
   - component: {fileID: 6785005888597776829}
   - component: {fileID: 199548865650329078}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SM_Rod_Reel_Crank
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -102,7 +102,7 @@ GameObject:
   - component: {fileID: 8707230316201849194}
   - component: {fileID: 5961427662591669754}
   - component: {fileID: 915600755366923412}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SM_Rod_Reel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -192,7 +192,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7322056348785443890}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -225,7 +225,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3788711983492645416}
   - component: {fileID: 7697723896518552824}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SOCKET_ReelKnob
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -279,7 +279,7 @@ GameObject:
   - component: {fileID: 6936679697034745970}
   - component: {fileID: 2541767566018978566}
   - component: {fileID: 3090833101060730226}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SM_Rod_Reel_Spool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -368,7 +368,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6319156225002195857}
   - component: {fileID: 1428857708791829856}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Moulinet
   m_TagString: Untagged
   m_Icon: {fileID: 0}

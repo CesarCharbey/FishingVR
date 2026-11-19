@@ -45,6 +45,8 @@ namespace FishingVR.Fishing
 
         /// <summary>Current crank speed in turns per second (reel-in positive).</summary>
         public float CrankSpeed => crankSpeed;
+        /// <summary>Line retrieved per crank turn (m).</summary>
+        public float MetersPerTurn => metersPerTurn;
 
         Vector3 WorldAxis => crankPivot.TransformDirection(crankLocalAxis).normalized;
 

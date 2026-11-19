@@ -4,6 +4,7 @@ using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation;
 
 namespace FishingVR.Boat
 {
@@ -36,8 +37,12 @@ namespace FishingVR.Boat
                  "1 = rigidly attached to the boat.")]
         [SerializeField, Range(0f, 1f)] float tiltFollow = 0.25f;
 
+        [Header("Locomotion")]
+        [Tooltip("Keep teleportation while seated: aim at the shore / dock to get off (see BoatBoarding).")]
+        [SerializeField] bool keepTeleportWhileSeated = true;
+
         [Header("Dev")]
-        [Tooltip("Seat the scene's XR Origin in this boat on Start (until the game has an embark flow).")]
+        [Tooltip("Seat the scene's XR Origin in this boat on Start (dev scenes). The game boards by teleporting onto the seat (BoatBoarding).")]
         [SerializeField] bool mountOnStart = true;
 
         [Header("Events")]
@@ -115,6 +120,8 @@ namespace FishingVR.Boat
             disabledProviders.Clear();
             foreach (var provider in origin.GetComponentsInChildren<LocomotionProvider>())
             {
+                if (keepTeleportWhileSeated && provider is TeleportationProvider)
+                    continue;
                 if (provider.enabled)
                 {
                     provider.enabled = false;

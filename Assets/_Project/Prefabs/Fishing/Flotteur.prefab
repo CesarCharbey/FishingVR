@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5416279062287184618}
   - component: {fileID: 1572568109277170837}
   - component: {fileID: 741001870038738631}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Flotteur
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -149,9 +149,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 597205561980416753, guid: 4f6871629ca8c854b944ff651eff740b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4f6871629ca8c854b944ff651eff740b, type: 3}
       propertyPath: m_Name
       value: SM_Bobber
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 4f6871629ca8c854b944ff651eff740b, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3901650299386166060, guid: 4f6871629ca8c854b944ff651eff740b, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

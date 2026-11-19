@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f818f39938bc73c4795fc6ee5d99bf42, type: 3}
   m_Name: FB_Nerveux
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fish.FishBehaviourProfile
-  approachDelay: {x: 2, y: 6}
-  nibbleCount: {x: 2, y: 5}
-  nibbleInterval: {x: 0.6, y: 1.5}
+  approachDelay: {x: 2, y: 5}
+  spawnDistance: {x: 6, y: 9}
+  spawnDepth: {x: 2.5, y: 3.5}
+  cruiseSpeed: 0.9
+  circleRadius: {x: 0.5, y: 0.9}
+  circleLaps: {x: 1, y: 2}
+  nibbleCount: {x: 2, y: 4}
+  nibbleInterval: {x: 0.5, y: 1}
   biteWindow: 1.4
   biteSinkDepth: 0.25
   pullPerKg: 10
-  restPull: 0.3
-  exhaustedPull: 0.08
-  pullJitter: 0.2
-  baseStamina: 3
-  staminaPerKg: 2
-  restRecovery: 0.5
-  exhaustedRecovery: 0.15
-  wakeUpRatio: 0.3
-  swimSpeed: 2
-  rushDuration: {x: 1, y: 2.5}
-  restDuration: {x: 1, y: 2}
-  headingChangeInterval: {x: 0.6, y: 1.8}
-  depthRange: {x: 0.6, y: 1.2}
+  runSpeed: 4
+  lateralSpeed: 2.2
+  lateralRange: 4
+  directionChangeInterval: {x: 0.8, y: 2}
+  depthRange: {x: 0.6, y: 1.1}
+  struggleStamina: 3
+  staminaPerKg: 1
+  fatigueCycles: {x: 2, y: 2}

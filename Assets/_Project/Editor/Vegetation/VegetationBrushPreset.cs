@@ -46,6 +46,22 @@ namespace FishingVR.EditorTools
         public float minWaterDepth = 0.3f;
         public bool randomYaw = true;
 
+        public enum ColliderMode
+        {
+            /// <summary>No collision (grass, bushes, shore plants).</summary>
+            None,
+            /// <summary>Upright capsule around the trunk: blocks the player, branches stay passable.</summary>
+            Trunk,
+            /// <summary>Exact mesh collider (rocks, props).</summary>
+            Mesh,
+        }
+
+        [Header("Physics")]
+        [Tooltip("GameObjects mode: collider added to each painted instance.")]
+        public ColliderMode collider = ColliderMode.None;
+        [Tooltip("GameObjects mode: mark instances static (faster). Turn off for things that move (lily pads pushed by boats).")]
+        public bool markStatic = true;
+
         [Header("Organisation")]
         [Tooltip("GameObjects mode: parent group under --- MAP ---/Vegetation.")]
         public string groupName = "Vegetation";

@@ -46,5 +46,7 @@ MonoBehaviour:
   placeOnWaterSurface: 0
   minWaterDepth: 0.3
   randomYaw: 1
+  collider: 1
+  markStatic: 1
   groupName: Forest
   brushColor: {r: 0.55, g: 0.75, b: 0.2, a: 1}

@@ -36,5 +36,7 @@ MonoBehaviour:
   placeOnWaterSurface: 0
   minWaterDepth: 0.3
   randomYaw: 1
+  collider: 0
+  markStatic: 1
   groupName: Shore
   brushColor: {r: 0.85, g: 0.75, b: 0.45, a: 1}
