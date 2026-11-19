@@ -67,9 +67,36 @@ namespace FishingVR.Fishing
         public float LineTension { get; set; }
         /// <summary>World point the line pulls toward (hook / fish).</summary>
         public Vector3 LinePullPoint { get; set; }
-        public bool IsHeld => grab != null && grab.isSelected;
-        public bool IsTwoHanded => grab != null && grab.interactorsSelecting.Count > 1;
-        public IXRSelectInteractor MainHand => grab != null ? grab.firstInteractorSelecting : null;
+        /// <summary>Held by a hand (not just resting in a rack).</summary>
+        public bool IsHeld => MainHand != null;
+        public bool IsTwoHanded => HandCount > 1;
+
+        /// <summary>
+        /// The hand holding the rod (first hand still selecting it). Not firstInteractorSelecting: after taking the
+        /// rod from a rack, XRI keeps the rack socket there even though it has let go, so the trigger was ignored.
+        /// </summary>
+        public IXRSelectInteractor MainHand
+        {
+            get
+            {
+                if (grab == null) return null;
+                foreach (var i in grab.interactorsSelecting)
+                    if (!(i is XRSocketInteractor)) return i;
+                return null;
+            }
+        }
+
+        int HandCount
+        {
+            get
+            {
+                if (grab == null) return 0;
+                var n = 0;
+                foreach (var i in grab.interactorsSelecting)
+                    if (!(i is XRSocketInteractor)) n++;
+                return n;
+            }
+        }
         public bool IsLineHeld => lineHeld;
 
         /// <summary>Smoothed world velocity of the rod tip.</summary>
@@ -126,7 +153,7 @@ namespace FishingVR.Fishing
 
         void OnSelectEntered(SelectEnterEventArgs args)
         {
-            if (grab.interactorsSelecting.Count == 1)
+            if (!(args.interactorObject is XRSocketInteractor) && HandCount == 1)
             {
                 onGrabbed?.Invoke();
                 SendHaptic(0.2f, 0.05f);
@@ -135,7 +162,7 @@ namespace FishingVR.Fishing
 
         void OnSelectExited(SelectExitEventArgs args)
         {
-            if (!grab.isSelected)
+            if (MainHand == null)
             {
                 lineHeld = false;
                 onReleased?.Invoke();

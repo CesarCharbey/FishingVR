@@ -625,6 +625,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Dev.XRSimulatorFallback
   simulatorPrefab: {fileID: 8135023674665499069, guid: 58d0a4ac86f2348deb02f3880c71378e, type: 3}
   forceSimulator: 0
+  headsetWaitTime: 1.5
 --- !u!4 &1360093685
 Transform:
   m_ObjectHideFlags: 0
@@ -775,6 +776,10 @@ MonoBehaviour:
   staminaRecoverRatio: 0.75
   fullCounterSide: 0.35
   goodCounter: 0.3
+  raisedRodStart: 30
+  raisedRodFull: 55
+  counterRiseRate: 12
+  counterFallRate: 3
   wrongTensionRate: 0.9
   relaxRate: 0.6
   overReelTensionPerMeter: 1
@@ -1016,7 +1021,7 @@ MonoBehaviour:
   m_InteractionManager: {fileID: 0}
   m_Colliders: []
   m_InteractionLayers:
-    m_Bits: 1
+    m_Bits: 2147483648
   m_DistanceCalculationMode: 1
   m_SelectMode: 1
   m_FocusMode: 1

@@ -42,7 +42,8 @@ namespace FishingVR.EditorTools
                     props += AddMeshColliders(child.gameObject);
                     if (n.Contains("Dock") && child.GetComponent<TeleportationArea>() == null)
                     {
-                        Undo.AddComponent<TeleportationArea>(child.gameObject);
+                        var area = Undo.AddComponent<TeleportationArea>(child.gameObject);
+                        UseTeleportLayer(area);
                         docks++;
                     }
                 }
@@ -59,6 +60,16 @@ namespace FishingVR.EditorTools
                 if (lily != null) SetupFloatingPlants(lily.gameObject);
             }
             return $"colliders: {props} prop meshes, {docks} dock teleport areas, {trunks} tree trunks, {rocks} rocks";
+        }
+
+        /// <summary>
+        /// Teleport destinations must be on the "Teleport" interaction layer: the teleport ray only targets that
+        /// layer, and the hands (Default) would otherwise grab the ground / dock instead of the items.
+        /// </summary>
+        public static void UseTeleportLayer(BaseTeleportationInteractable interactable)
+        {
+            var mask = UnityEngine.XR.Interaction.Toolkit.InteractionLayerMask.GetMask("Teleport");
+            if (mask != 0) interactable.interactionLayers = mask;
         }
 
         public static void SetupFloatingPlants(GameObject group)
