@@ -15,7 +15,7 @@ MonoBehaviour:
   maxThrust: 600
   reverseThrustRatio: 0.4
   throttleResponse: 1.5
-  maxSteerAngle: 20
+  maxSteerAngle: 30
   steerResponse: 60
   lowerUnitDrag: 25
   propellerMaxSpeed: 2000
