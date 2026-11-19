@@ -43,6 +43,12 @@ namespace FishingVR.Fish
         [SerializeField] float nibbleDipDepth = 0.05f;
         [SerializeField] bool debugLogs = true;
 
+        [Header("Stay in the water")]
+        [Tooltip("No fish comes to a bait in water shallower than this (m).")]
+        [SerializeField] float minBiteDepth = 0.4f;
+        [Tooltip("Fish only swim (approach, circle) where the water is at least this deep (m).")]
+        [SerializeField] float minSwimDepth = 0.35f;
+
         [Header("Events")]
         public UnityEvent<FishInstance> onNibble;
         public UnityEvent<FishInstance> onBite;
@@ -72,6 +78,18 @@ namespace FishingVR.Fish
 
         FishingLine Line => rod != null ? rod.Line : null;
         Vector3 HookPos => Line.Hook.position;
+        /// <summary>Where the fish's mouth goes for the hook: the hook, kept off the bottom.</summary>
+        Vector3 HookTarget
+        {
+            get
+            {
+                var h = HookPos;
+                h.y = FishingWater.ClampUnderwater(h, h.y, 0.16f, 0.08f);
+                return h;
+            }
+        }
+        bool tooShallowLogged;
+        float bobberOutTimer;
 
         void Awake() => fight = GetComponent<FishFight>();
 
@@ -91,13 +109,17 @@ namespace FishingVR.Fish
             if (line == null)
                 return;
 
-            var baitInWater = line.State == LineState.Deployed && line.Bobber.IsInWater && !line.InFight;
             var dt = Time.deltaTime;
+            // The bobber bounces a little after a nibble: only a bait out of the water for a moment counts.
+            bobberOutTimer = line.Bobber.IsInWater ? 0f : bobberOutTimer + dt;
+            var baitInWater = line.State == LineState.Deployed && bobberOutTimer < 0.3f && !line.InFight;
             timer -= dt;
 
             switch (state)
             {
                 case FishBiteState.Idle:
+                    if (baitInWater && line.Bobber.IsSettled && !DeepEnough(line))
+                        break;
                     if (baitInWater && line.Bobber.IsSettled && PickFish())
                     {
                         timer = RandomRange(current.Behaviour.approachDelay);
@@ -114,7 +136,7 @@ namespace FishingVR.Fish
                 {
                     if (!baitInWater) { Flee("bait pulled out"); break; }
                     var b = current.Behaviour;
-                    var entry = OrbitPoint(orbitAngle, orbitRadius);
+                    var entry = SafePoint(OrbitPoint(orbitAngle, orbitRadius));
                     body.SwimTowards(entry, b.cruiseSpeed, 90f);
                     if (Horizontal(body.Head - HookPos) < orbitRadius * 1.4f || timer <= 0f)
                     {
@@ -135,6 +157,7 @@ namespace FishingVR.Fish
                     orbitRadius = Mathf.Lerp(orbitStartRadius, orbitStartRadius * 0.6f, orbitTime / orbitDuration);
                     var target = OrbitPoint(orbitAngle + Mathf.Sign(orbitSpeed) * 0.6f, orbitRadius); // aim a bit ahead
                     target.y += Mathf.Sin(orbitTime * 1.3f) * 0.08f;
+                    target = SafePoint(target); // the circle is squashed against the shore
                     body.SwimTowards(target, b.cruiseSpeed * 0.8f, 150f);
                     if (orbitTime >= orbitDuration)
                     {
@@ -155,8 +178,8 @@ namespace FishingVR.Fish
                     if (darting)
                     {
                         // Quick dart at the hook.
-                        body.SwimTowards(HookPos, b.cruiseSpeed * 2f, 260f, 0.15f, 6f);
-                        if (Vector3.Distance(body.Head, HookPos) < 0.1f || timer <= 0f)
+                        body.SwimTowards(HookTarget, b.cruiseSpeed * 2f, 260f, 0.15f, 6f);
+                        if (Vector3.Distance(body.Head, HookTarget) < 0.1f || timer <= 0f)
                         {
                             nibblesLeft--;
                             line.Bobber.Dip(nibbleDipDepth, 0.15f);
@@ -172,7 +195,7 @@ namespace FishingVR.Fish
                         var away = body.Head - HookPos;
                         away.y = 0f;
                         if (away.sqrMagnitude < 1e-4f) away = Vector3.forward;
-                        body.SwimTowards(HookPos + away.normalized * 0.55f, b.cruiseSpeed, 200f, 0.3f);
+                        body.SwimTowards(SafePoint(HookTarget + away.normalized * 0.55f), b.cruiseSpeed, 200f, 0.3f);
                         if (timer <= 0f)
                         {
                             if (nibblesLeft > 0) { darting = true; timer = 2f; }
@@ -187,8 +210,8 @@ namespace FishingVR.Fish
                     if (!biteStarted)
                     {
                         // Final dart at the hook.
-                        body.SwimTowards(HookPos, current.Behaviour.cruiseSpeed * 2.5f, 300f, 0.1f, 8f);
-                        if (Vector3.Distance(body.Head, HookPos) < 0.08f || timer <= 0f)
+                        body.SwimTowards(HookTarget, current.Behaviour.cruiseSpeed * 2.5f, 300f, 0.1f, 8f);
+                        if (Vector3.Distance(body.Head, HookTarget) < 0.08f || timer <= 0f)
                         {
                             // Mouth on the hook: it pulls the bobber under.
                             biteStarted = true;
@@ -221,15 +244,25 @@ namespace FishingVR.Fish
             var hook = HookPos;
             var water = FishingWater.HeightAt(hook);
 
-            // Appears away from the angler (or on the sides), deep under the surface, above the lake bed.
+            // Appears away from the angler (or on the sides), deep under the surface, above the lake bed,
+            // in open water with a straight swim to the hook (never from the shore side).
             var tip = rod.RodTip.position;
             var away = Horizontal3(hook - tip).normalized;
             if (away.sqrMagnitude < 1e-4f) away = Vector3.forward;
-            var dir = Quaternion.Euler(0f, Random.Range(-110f, 110f), 0f) * away;
-            var pos = hook + dir * RandomRange(b.spawnDistance);
-            pos.y = water - RandomRange(b.spawnDepth);
-            if (Physics.Raycast(new Vector3(pos.x, water + 0.5f, pos.z), Vector3.down, out var bed, 60f, ~0, QueryTriggerInteraction.Ignore))
-                pos.y = Mathf.Max(pos.y, Mathf.Min(bed.point.y + 0.4f, water - 0.3f));
+            var dir = away;
+            var distance = 0f;
+            var bestDistance = -1f;
+            for (var i = 0; i < 24 && distance <= 0f; i++)
+            {
+                // Away from the angler first, then any direction.
+                var candidate = Quaternion.Euler(0f, i < 12 ? Random.Range(-110f, 110f) : Random.Range(-180f, 180f), 0f) * away;
+                var free = FishingWater.SwimmableDistance(hook, candidate, b.spawnDistance.y, minSwimDepth + 0.1f);
+                if (free >= b.spawnDistance.x) { dir = candidate; distance = Random.Range(b.spawnDistance.x, free); }
+                else if (free > bestDistance) { bestDistance = free; dir = candidate; }
+            }
+            if (distance <= 0f) distance = Mathf.Max(1f, bestDistance); // enclosed water: as far as it can
+            var pos = hook + dir * distance;
+            pos.y = FishingWater.ClampUnderwater(pos, water - RandomRange(b.spawnDepth), 0.3f, 0.15f);
 
             body = FishBody.Create(current, pos, hook - pos, underwaterMaterial);
 
@@ -270,6 +303,9 @@ namespace FishingVR.Fish
         {
             Line.Bobber.ClearSink();
             rod.SendHaptic(1f, 0.3f, true);
+            // The fish jerks when the hook goes in.
+            FX.WaterFX.Splash(body.Head, 0.4f + 0.4f * Mathf.Clamp01(body.Length / 0.6f));
+            FX.WaterFX.Bubbles(body.Head, 8, 1.2f);
             SetState(FishBiteState.Hooked);
             if (debugLogs) Debug.Log($"[Fish] Hooked {current}");
             onHooked?.Invoke(current);
@@ -312,6 +348,24 @@ namespace FishingVR.Fish
         }
 
         static bool IsValid(FishSpecies s) => s != null && s.behaviour != null && s.modelPrefab != null;
+
+        /// <summary>The point, brought back toward the hook if it is in the shallows, kept off the bottom.</summary>
+        Vector3 SafePoint(Vector3 point)
+        {
+            var p = FishingWater.PullTowardsWater(point, HookTarget, minSwimDepth);
+            p.y = FishingWater.ClampUnderwater(p, p.y, 0.16f, 0.08f);
+            return p;
+        }
+
+        /// <summary>No fish in a few centimetres of water (bobber on the shore).</summary>
+        bool DeepEnough(FishingLine line)
+        {
+            var deep = FishingWater.IsSwimmable(line.Bobber.transform.position, minBiteDepth);
+            if (!deep && debugLogs && !tooShallowLogged)
+                Debug.Log($"[Fish] Bait in {FishingWater.DepthAt(line.Bobber.transform.position):0.00} m of water: too shallow, no fish will come.");
+            tooShallowLogged = !deep;
+            return deep;
+        }
 
         Vector3 OrbitPoint(float angle, float radius)
         {

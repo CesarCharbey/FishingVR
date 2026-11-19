@@ -55,8 +55,13 @@ namespace FishingVR.Fish
         [SerializeField] float slackTimeout = 5f;
         [Tooltip("A tired phase ends after this long even if its distance share was not reeled (s).")]
         [SerializeField] float exhaustedMaxDuration = 12f;
-        [Tooltip("Stamina recovered at the start of each new struggle (ratio of the max).")]
-        [Range(0.1f, 1f)] [SerializeField] float staminaRecoverRatio = 0.75f;
+        [Tooltip("Stamina recovered at the start of each new struggle (ratio of the max). 1 = every cycle is as long as the first.")]
+        [Range(0.1f, 1.5f)] [SerializeField] float staminaRecoverRatio = 1f;
+        [Tooltip("When it wakes up from a tired phase, the fish thrashes for this long (s): it does not tire, reeling " +
+                 "slips (no line gained, no strain) and the line cannot break.")]
+        [SerializeField] float wakeUpTime = 2.5f;
+        [Tooltip("Max tension while it wakes up (stays under the warning / breaking zone).")]
+        [Range(0f, 1f)] [SerializeField] float wakeUpMaxTension = 0.6f;
 
         [Header("Rod angle")]
         [Tooltip("Sideways component of the rod (sin of its angle to the line) giving a perfect counter.")]
@@ -80,6 +85,14 @@ namespace FishingVR.Fish
         [SerializeField] float overReelTensionPerMeter = 1f;
         [Tooltip("Tension per second per crank turn/s above the rod's max crank speed.")]
         [SerializeField] float overspeedTensionRate = 0.5f;
+
+        [Header("Stay in the water")]
+        [Tooltip("The fish fights only where the water is at least this deep: it turns back at the shallows / shore (m).")]
+        [SerializeField] float minFightDepth = 0.6f;
+        [Tooltip("Its head keeps at least this height above the lake bed (m).")]
+        [SerializeField] float bedClearance = 0.2f;
+        [Tooltip("At hook time the fight line may turn up to this angle (deg) toward open water if the shore is in the way.")]
+        [SerializeField] float maxAxisTurn = 75f;
 
         [Header("Landing")]
         [Tooltip("Max weight (kg) that can be grabbed by hand. Heavier fish need the landing net.")]
@@ -113,6 +126,7 @@ namespace FishingVR.Fish
         int cyclesTotal, cyclesDone;
         float cycleBudget, budgetUsed;
         float exhaustedTimer, slackTimer;
+        float wakeTimer;
         float depth;
         float landLength;
         Vector3 landDir;
@@ -129,6 +143,8 @@ namespace FishingVR.Fish
         public FightPhase Phase => phase;
         public FishInstance Fish => fish;
         public FishBody Body => body;
+        /// <summary>Just woke up from a tired phase: thrashing, can't be tired or reeled, the line is safe.</summary>
+        public bool IsWakingUp => phase == FightPhase.Struggle && wakeTimer > 0f;
         public bool IsFighting => phase is FightPhase.Run or FightPhase.Struggle or FightPhase.Exhausted or FightPhase.Landing;
         public float Tension => tension;
         public float StaminaRatio => staminaMax > 0f ? Mathf.Clamp01(stamina / staminaMax) : 0f;
@@ -155,17 +171,20 @@ namespace FishingVR.Fish
             axis = Flat(head - anchor);
             if (axis.sqrMagnitude < 1e-4f) axis = Flat(rod.transform.forward);
             axis.Normalize();
+            var hookDistance = HorizontalDistance(anchor, head);
+            startDistance = Mathf.Max(hookDistance, Stats.fightDistance);
+            ChooseFightAxis(hookDistance);
             right = Vector3.Cross(Vector3.up, axis);
-            distance = HorizontalDistance(anchor, head);
-            startDistance = Mathf.Max(distance, Stats.fightDistance);
-            lateral = 0f;
+            // The fish keeps its place: the fight line may have turned toward open water.
+            distance = Vector3.Dot(Flat(head - anchor), axis);
+            lateral = Vector3.Dot(Flat(head - anchor), right);
             lateralVelocity = 0f;
             depth = Mathf.Max(0.3f, FishingWater.HeightAt(head) - head.y);
 
             staminaMax = stamina = fish.MaxStamina;
             cyclesTotal = UnityEngine.Random.Range(B.fatigueCycles.x, B.fatigueCycles.y + 1);
             cyclesDone = 0;
-            cycleBudget = Mathf.Max(1f, (startDistance - landingDistance) / Mathf.Max(1, cyclesTotal));
+            UpdateCycleBudget();
             tension = 0.2f;
             overTimer = 0f;
             warning = false;
@@ -204,8 +223,16 @@ namespace FishingVR.Fish
             switch (phase)
             {
                 case FightPhase.Run:
-                    distance = Mathf.MoveTowards(distance, startDistance, B.runSpeed * dt);
-                    lateral = Mathf.MoveTowards(lateral, 0f, dt);
+                {
+                    var nextDistance = Mathf.MoveTowards(distance, startDistance, B.runSpeed * dt);
+                    var nextLateral = Mathf.MoveTowards(lateral, 0f, Mathf.Max(1f, B.runSpeed * 0.5f) * dt);
+                    if (Blocked(nextDistance, nextLateral))
+                    {
+                        // Shallows ahead: the run ends here.
+                        startDistance = distance;
+                        UpdateCycleBudget();
+                    }
+                    else { distance = nextDistance; lateral = nextLateral; }
                     tension = Mathf.MoveTowards(tension, 0.25f, dt);
                     tensionDelta += reeled * overReelTensionPerMeter * strength; // reeling against the run
                     targetDepth = B.depthRange.y;
@@ -213,10 +240,13 @@ namespace FishingVR.Fish
                     facing = axis; // runs away
                     if (distance >= startDistance - 0.01f) StartStruggle();
                     break;
+                }
 
                 case FightPhase.Struggle:
                 {
                     effort = 1f;
+                    var waking = wakeTimer > 0f;
+                    if (waking) wakeTimer -= dt;
                     targetDepth = Mathf.Lerp(B.depthRange.x, B.depthRange.y, 0.5f + 0.5f * Mathf.Sin(Time.time * 0.7f));
                     var maxLateral = Mathf.Min(B.lateralRange, distance * 0.6f);
                     switchTimer -= dt;
@@ -224,7 +254,16 @@ namespace FishingVR.Fish
                         SwitchDirection();
                     var speed = B.lateralSpeed * (0.6f + 0.4f * StaminaRatio);
                     lateralVelocity = Mathf.MoveTowards(lateralVelocity, direction * speed, B.lateralSpeed * 2f * dt);
-                    lateral = Mathf.Clamp(lateral + lateralVelocity * dt, -maxLateral, maxLateral);
+                    var nextLateral = lateral + lateralVelocity * dt;
+                    // Back inside the range smoothly (the fight line may have turned at hook time).
+                    nextLateral = Mathf.MoveTowards(nextLateral, Mathf.Clamp(nextLateral, -maxLateral, maxLateral), B.lateralSpeed * dt);
+                    if (Blocked(distance, nextLateral))
+                    {
+                        // Shore / shallows on this side: it turns back.
+                        if (Mathf.Sign(nextLateral - lateral) == direction) SwitchDirection();
+                        lateralVelocity = 0f;
+                    }
+                    else lateral = nextLateral;
                     // Swims sideways while pulling away: it turns through 'away', never toward the angler.
                     facing = right * lateralVelocity + axis * (B.lateralSpeed * 0.6f);
 
@@ -235,14 +274,15 @@ namespace FishingVR.Fish
                     if (counter >= goodCounter)
                     {
                         tension -= relaxRate * dt;
-                        stamina -= dt * (0.5f + counter); // pulling against it tires it
+                        if (!waking) stamina -= dt * (0.5f + counter); // pulling against it tires it
                     }
                     else
                     {
                         tensionDelta += wrongTensionRate * strength * (goodCounter - counter) / (1f + goodCounter) * dt;
                     }
 
-                    if (reeled > 0f)
+                    // Waking up: the line slips on the reel, no line gained and no strain.
+                    if (reeled > 0f && !waking)
                     {
                         var allowed = Mathf.Min(reeled, allowance);
                         allowance -= allowed;
@@ -280,7 +320,7 @@ namespace FishingVR.Fish
                     else if (budgetUsed >= cycleBudget || exhaustedTimer >= exhaustedMaxDuration)
                     {
                         stamina = staminaMax * staminaRecoverRatio;
-                        StartStruggle();
+                        StartStruggle(true);
                     }
                     break;
 
@@ -295,11 +335,11 @@ namespace FishingVR.Fish
                     break;
             }
 
-            // Cranking too fast strains the line whatever the phase.
-            if (crank > Stats.maxCrankSpeed)
+            // Cranking too fast strains the line whatever the phase (except while it wakes up: the line slips).
+            if (crank > Stats.maxCrankSpeed && !IsWakingUp)
                 tensionDelta += (crank - Stats.maxCrankSpeed) * overspeedTensionRate * strength * dt;
 
-            tension = Mathf.Clamp(tension + tensionDelta, 0f, 1.3f);
+            tension = Mathf.Clamp(tension + tensionDelta, 0f, IsWakingUp ? wakeUpMaxTension : 1.3f);
             onTensionChanged?.Invoke(tension);
 
             overTimer = tension >= 1f ? overTimer + dt : 0f;
@@ -314,7 +354,7 @@ namespace FishingVR.Fish
                 // Small outward arc while it turns around (U-turn), visual only.
                 var turn = phase == FightPhase.Struggle ? 1f - Mathf.Clamp01(Mathf.Abs(lateralVelocity) / Mathf.Max(0.1f, B.lateralSpeed * 0.6f)) : 0f;
                 var p = anchor + axis * (distance + turn * 0.6f) + right * lateral;
-                p.y = FishingWater.HeightAt(p) - depth;
+                p.y = FishingWater.ClampUnderwater(p, FishingWater.HeightAt(p) - depth, bedClearance, 0.05f);
                 head = p;
             }
 
@@ -324,6 +364,7 @@ namespace FishingVR.Fish
             UpdatePermissions(tip, lifted);
 
             Line.UpdateFight(head, lifted, tension);
+            LineCutFX(tip, dt);
             Line.SetLineLength(Vector3.Distance(tip, head));
             rod.LineTension = tension;
             rod.LinePullPoint = head;
@@ -332,8 +373,72 @@ namespace FishingVR.Fish
 
         // ---------- Phases ----------
 
-        void StartStruggle()
+        /// <param name="wakeUp">Coming out of a tired phase: starts with a thrashing grace period (<see cref="wakeUpTime"/>).</param>
+        /// <summary>
+        /// The fish runs away from the angler along the fight line. If the shore / shallows are that way, the
+        /// line turns (up to <see cref="maxAxisTurn"/>) toward the direction with the most open water, and the
+        /// run is shortened to what is swimmable.
+        /// </summary>
+        void ChooseFightAxis(float hookDistance)
         {
+            var original = axis;
+            var bestScore = float.NegativeInfinity;
+            var bestReach = startDistance;
+            for (var angle = 0f; angle <= maxAxisTurn + 0.01f; angle += 15f)
+            for (var side = -1; side <= 1; side += 2)
+            {
+                if (angle == 0f && side > 0) continue;
+                var candidate = Quaternion.Euler(0f, angle * side, 0f) * original;
+                // From where the fish would be on this line, out to the fight distance.
+                var from = Mathf.Max(hookDistance * Mathf.Cos(angle * Mathf.Deg2Rad), landingDistance + 1f);
+                var reach = from;
+                if (from < startDistance)
+                    reach = from + FishingWater.SwimmableDistance(anchor + candidate * from, candidate, startDistance - from, minFightDepth);
+                // Prefer the original line (the cast direction): each degree costs 5 cm of run.
+                var score = reach - angle * 0.05f;
+                if (score > bestScore) { bestScore = score; bestReach = reach; axis = candidate; }
+                if (angle == 0f && reach >= startDistance - 0.01f) return; // open water straight ahead
+            }
+            startDistance = Mathf.Max(hookDistance * Vector3.Dot(original, axis), Mathf.Min(startDistance, bestReach));
+        }
+
+        /// <summary>
+        /// True if moving the fish to (distance, lateral) on the fight line would take it into water shallower
+        /// than <see cref="minFightDepth"/> (unless it gets deeper than where it is: it can always swim out).
+        /// </summary>
+        bool Blocked(float atDistance, float atLateral)
+        {
+            var p = anchor + axis * atDistance + right * atLateral;
+            var d = FishingWater.DepthAt(p);
+            return d < minFightDepth && d < FishingWater.DepthAt(head) - 0.01f;
+        }
+
+        float lineFxTimer;
+
+        /// <summary>The line slicing through the water while the fish runs / swims across: spray where it enters.</summary>
+        void LineCutFX(Vector3 tip, float dt)
+        {
+            if (!FX.WaterFX.Exists || (phase != FightPhase.Run && phase != FightPhase.Struggle)) return;
+            var water = FishingWater.HeightAt(head);
+            if (tip.y <= water || head.y >= water) return;
+            var speed = Mathf.Abs(lateralVelocity) + (phase == FightPhase.Run ? B.runSpeed : 0f);
+            if (speed < 1f) return;
+            lineFxTimer -= dt;
+            if (lineFxTimer > 0f) return;
+            lineFxTimer = Mathf.Lerp(0.2f, 0.07f, Mathf.InverseLerp(1f, 4f, speed));
+            var entry = Vector3.Lerp(tip, head, (tip.y - water) / (tip.y - head.y));
+            var side = phase == FightPhase.Run ? axis : right * Mathf.Sign(lateralVelocity);
+            FX.WaterFX.Ripple(entry, 0.12f, 0.5f);
+            FX.WaterFX.Spray(entry, side * speed * 0.3f + Vector3.up * 0.9f, Mathf.RoundToInt(Mathf.Lerp(1f, 3f, speed / 4f)), 0.4f, 0.6f);
+        }
+
+        void UpdateCycleBudget() =>
+            cycleBudget = Mathf.Max(1f, (startDistance - landingDistance) / Mathf.Max(1, cyclesTotal));
+
+        void StartStruggle(bool wakeUp = false)
+        {
+            wakeTimer = wakeUp ? wakeUpTime : 0f;
+            if (wakeUp) rod.SendHaptic(0.6f, 0.25f); // the fish jerks awake
             smoothedCounter = 0.5f; // neutral-good start, the player gets a moment to react
             direction = UnityEngine.Random.value < 0.5f ? -1 : 1;
             switchTimer = RandomRange(B.directionChangeInterval);
@@ -383,6 +488,9 @@ namespace FishingVR.Fish
             {
                 target = Flat(tip) + landDir * horizontal;
                 target.y = water - 0.05f;
+                // Dragged up a beach: on the ground, not through it.
+                var bed = FishingWater.BedHeight(target);
+                if (!float.IsNegativeInfinity(bed)) target.y = Mathf.Max(target.y, bed + 0.04f);
             }
             else target = tip + Vector3.down * landLength;
             return Vector3.Lerp(head, target, 1f - Mathf.Exp(-10f * dt));

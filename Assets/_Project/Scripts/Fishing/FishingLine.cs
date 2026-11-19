@@ -289,7 +289,11 @@ namespace FishingVR.Fishing
             if (hook == null)
                 return;
             var depth = state == LineState.Deployed && bobber.IsInWater ? hookDepth : 0.12f;
-            hook.position = bobber.LineBottom.position + Vector3.down * depth;
+            var pos = bobber.LineBottom.position + Vector3.down * depth;
+            // In shallow water the hook lies on the bottom instead of going through it.
+            var bed = FishingWater.BedHeight(pos);
+            if (!float.IsNegativeInfinity(bed)) pos.y = Mathf.Max(pos.y, Mathf.Min(bed + 0.04f, bobber.LineBottom.position.y));
+            hook.position = pos;
             hook.rotation = Quaternion.identity;
         }
 
