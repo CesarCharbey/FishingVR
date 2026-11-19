@@ -24,6 +24,17 @@ namespace FishingVR.Fish
             _ => 1f,
         };
 
+        /// <summary>Sale value multiplier (value = weight x species value per kg x this).</summary>
+        public static float ValueMultiplier(this FishRarity rarity) => rarity switch
+        {
+            FishRarity.Common => 1f,
+            FishRarity.Uncommon => 1.3f,
+            FishRarity.Rare => 1.8f,
+            FishRarity.Epic => 2.6f,
+            FishRarity.Legendary => 4f,
+            _ => 1f,
+        };
+
         public static string DisplayName(this FishRarity rarity) => rarity switch
         {
             FishRarity.Common => "Commun",

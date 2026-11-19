@@ -28,9 +28,11 @@ namespace FishingVR.Fish
     [DefaultExecutionOrder(100)] // after the rod tip / line have moved
     public class FishBody : MonoBehaviour, IXRSelectFilter
     {
-        public enum Mode { Driven, Fleeing, InNet, Free }
+        public enum Mode { Driven, Fleeing, InNet, Free, InCooler }
 
         [SerializeField] float handReach = 0.3f;
+        [Tooltip("The fish falls out of the net when the net's opening points this far down (dot with up).")]
+        [SerializeField] float netDumpDot = -0.2f;
         [Header("Swimming")]
         [Tooltip("Max turn rate of the heading (deg/s) for a 30 cm fish; bigger fish turn slower.")]
         [SerializeField] float yawRate = 320f;
@@ -74,6 +76,7 @@ namespace FishingVR.Fish
         float releasedTimer = -1f;
         float fleeTimer;
         Vector3 fleeTarget;
+        LandingNet inNet;
 
         Renderer[] renderers;
         Material[][] originalMaterials;
@@ -296,6 +299,7 @@ namespace FishingVR.Fish
         public void PutInNet(LandingNet net)
         {
             mode = Mode.InNet;
+            inNet = net;
             CanBeNetted = false;
             CanBeGrabbed = true;
             body.isKinematic = true;
@@ -306,10 +310,36 @@ namespace FishingVR.Fish
             ApplyAlpha(1f);
         }
 
+        /// <summary>
+        /// Put away in the cooler: no physics, can't be grabbed any more, laid at the given place
+        /// (scaled down if longer than <paramref name="maxLength"/> so that it fits).
+        /// </summary>
+        public void StoreIn(Transform parent, Vector3 localPosition, Quaternion localRotation, float maxLength)
+        {
+            mode = Mode.InCooler;
+            inNet = null;
+            CanBeGrabbed = false;
+            CanBeNetted = false;
+            if (grab != null)
+            {
+                if (grab.isSelected && grab.interactionManager != null) grab.interactionManager.CancelInteractableSelection((IXRSelectInteractable)grab);
+                grab.enabled = false;
+            }
+            body.isKinematic = true;
+            body.interpolation = RigidbodyInterpolation.None;
+            if (capsule != null) capsule.enabled = false;
+            transform.SetParent(parent, false);
+            var scale = length > maxLength ? maxLength / length : 1f;
+            transform.localScale = Vector3.one * scale;
+            transform.SetLocalPositionAndRotation(localPosition, localRotation);
+            ApplyAlpha(1f);
+        }
+
         /// <summary>Caught by hand (already in the hand) or taken out of the net: becomes a normal object.</summary>
         public void SetFree()
         {
             mode = Mode.Free;
+            inNet = null;
             CanBeGrabbed = true;
             CanBeNetted = false;
             transform.SetParent(null, true);
@@ -320,6 +350,9 @@ namespace FishingVR.Fish
 
         void MakeDynamic()
         {
+            // The physics body may not have caught up with a transform moved this frame.
+            body.position = transform.position;
+            body.rotation = transform.rotation;
             body.isKinematic = false;
             body.interpolation = RigidbodyInterpolation.Interpolate;
         }
@@ -332,6 +365,16 @@ namespace FishingVR.Fish
             switch (mode)
             {
                 case Mode.InNet when !IsGrabbed:
+                    // Net turned upside down (emptied into the cooler): the fish falls out.
+                    if (inNet != null && Vector3.Dot(inNet.transform.up, Vector3.up) < netDumpDot)
+                    {
+                        // It slides out through the hoop: no collision with the net itself.
+                        foreach (var c in inNet.GetComponentsInChildren<Collider>())
+                            if (capsule != null) Physics.IgnoreCollision(capsule, c, true);
+                        SetFree();
+                        body.linearVelocity = Vector3.down * 0.5f;
+                        break;
+                    }
                     wigglePhase += dt * 8f;
                     transform.localRotation = Quaternion.AngleAxis(Mathf.Sin(wigglePhase) * 10f, Vector3.up) * Quaternion.LookRotation(Vector3.right, Vector3.up);
                     break;

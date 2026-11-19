@@ -20,7 +20,8 @@ namespace FishingVR.Fish
 
         public FishBehaviourProfile Behaviour => species.behaviour;
         public float MaxStamina => Behaviour.struggleStamina + Behaviour.staminaPerKg * weightKg;
-        public float Value => weightKg * species.valuePerKg;
+        /// <summary>Sale value: weight x species value per kg x rarity multiplier.</summary>
+        public float Value => weightKg * species.valuePerKg * species.rarity.ValueMultiplier();
 
         public override string ToString() => $"{species.displayName} ({lengthCm:0} cm, {weightKg:0.00} kg)";
     }
