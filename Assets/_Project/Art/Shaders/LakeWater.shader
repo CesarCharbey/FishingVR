@@ -314,9 +314,12 @@ Shader "FishingVR/LakeWater"
                         float bakedThere = SAMPLE_TEXTURE2D_LOD(_BedDepthTex, sampler_BedDepthTex, saturate(sceneBedUV), 0).r * 6.0 - 1.0;
                         // The visible point is the bed itself: within a few cm of the baked depth (not the bottom
                         // of a post or the propeller above a shallow bed), and not a vertical surface.
-                        bakedBed = step(bakedThere - _BedTolerance, waterDepth);
+                        // Soft test (never a hard switch: the low-poly terrain faces sit a few cm off the
+                        // smoothly interpolated bake, a hard test drew patches shaped like the triangles).
+                        bakedBed = saturate(1.0 - (bakedThere - _BedTolerance - waterDepth) / 0.25);
                         onBed = bakedBed * (1.0 - steep);
-                        bedDepth = onBed > 0.5 ? waterDepth : max(bakedHere, 0.0);
+                        // Colour and shore foam always follow the baked bed under this point: continuous.
+                        bedDepth = max(bakedHere, 0.0);
                     }
                 }
 
