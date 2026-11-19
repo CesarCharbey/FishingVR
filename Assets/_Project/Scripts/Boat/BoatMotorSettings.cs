@@ -32,6 +32,17 @@ namespace FishingVR.Boat
                  "the boat still steers a little while coasting with the throttle cut. Bigger motor = bigger lower unit.")]
         [Min(0f)] public float lowerUnitDrag = 15f;
 
+        [Header("Engine speed (sound)")]
+        [Tooltip("How fast the engine speed climbs (fraction of full speed per second). Revving up is quick.")]
+        [Min(0.01f)] public float rpmRiseRate = 2f;
+
+        [Tooltip("How fast the engine speed drops (fraction of full speed per second). Slower than rising: the engine winds down.")]
+        [Min(0.01f)] public float rpmFallRate = 1f;
+
+        [Tooltip("Engine speed reached at full throttle with the propeller out of the water, relative to full speed under load. " +
+                 "Above 1: with nothing to push, the engine races.")]
+        [Range(1f, 2f)] public float freeRevRatio = 1.3f;
+
         [Header("Visuals")]
         [Tooltip("Propeller rotation speed at full throttle (degrees per second).")]
         public float propellerMaxSpeed = 2000f;

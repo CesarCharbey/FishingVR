@@ -1,7 +1,8 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion;
 
 namespace FishingVR.Boat
@@ -38,6 +39,13 @@ namespace FishingVR.Boat
         [Header("Dev")]
         [Tooltip("Seat the scene's XR Origin in this boat on Start (until the game has an embark flow).")]
         [SerializeField] bool mountOnStart = true;
+
+        [Header("Events")]
+        [Tooltip("The player just sat at the helm (engine ambience, UI hints...).")]
+        public UnityEvent<XROrigin> onMounted = new();
+
+        [Tooltip("The player just left the boat.")]
+        public UnityEvent<XROrigin> onDismounted = new();
 
         Transform anchor;
         XROrigin seated;
@@ -125,6 +133,7 @@ namespace FishingVR.Boat
             origin.transform.localPosition = Vector3.zero;
             origin.transform.localRotation = Quaternion.identity;
             Recenter();
+            onMounted?.Invoke(origin);
         }
 
         /// <summary>Releases the player where they are and restores their locomotion.</summary>
@@ -149,7 +158,9 @@ namespace FishingVR.Boat
 
             disabledProviders.Clear();
             characterController = null;
+            XROrigin leaving = seated;
             seated = null;
+            onDismounted?.Invoke(leaving);
         }
 
         /// <summary>

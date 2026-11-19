@@ -75,8 +75,8 @@ namespace FishingVR.Dev
         void OnGUI()
         {
             float speedKmh = hydrodynamics != null ? hydrodynamics.ForwardSpeed * 3.6f : 0f;
-            GUI.Label(new Rect(10, 10, 600, 22),
-                $"Boat  throttle: {motor.Throttle:+0.00;-0.00}   motor angle: {motor.MotorAngle:0}°   speed: {speedKmh:0.0} km/h   (arrows, ! = cut, R = reset)");
+            GUI.Label(new Rect(10, 10, 700, 22),
+                $"Boat  throttle: {motor.Throttle:+0.00;-0.00}   rpm: {motor.EngineRpm:0.00}   motor angle: {motor.MotorAngle:0}°   speed: {speedKmh:0.0} km/h   (arrows, ! = cut, R = reset)");
         }
     }
 }

@@ -1,4 +1,5 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Events;
 
 namespace FishingVR.Boat
 {
@@ -25,6 +26,13 @@ namespace FishingVR.Boat
         [Tooltip("Propeller (SM_Boat_Motor_Propeller). Its position is where the thrust is applied.")]
         [SerializeField] Transform propeller;
 
+        [Header("Events")]
+        [Tooltip("The propeller just came out of the water (boat dropped or lifted, big waves later): the motor races, cavitation sound.")]
+        public UnityEvent onPropellerSurfaced = new();
+
+        [Tooltip("The propeller just went back under the water.")]
+        public UnityEvent onPropellerSubmerged = new();
+
         Rigidbody body;
         BoatBuoyancy buoyancy;
 
@@ -36,6 +44,7 @@ namespace FishingVR.Boat
 
         float requestedSteer;
         float requestedThrottle;
+        bool hasPropellerState; // False until the first physics step, so no event fires at startup.
 
         /// <summary>Current (smoothed) throttle, from -1 (full reverse) to 1 (full forward).</summary>
         public float Throttle { get; private set; }
@@ -45,6 +54,13 @@ namespace FishingVR.Boat
 
         /// <summary>True when the propeller is under water and can push the boat.</summary>
         public bool IsPropellerSubmerged { get; private set; }
+
+        /// <summary>
+        /// Engine speed for sounds: 0 = idle, 1 = full throttle with the propeller in the water, up to
+        /// <see cref="BoatMotorSettings.freeRevRatio"/> when the propeller races out of the water.
+        /// Has its own inertia (rises fast, winds down slower), independent of the tiller. Same in forward and reverse.
+        /// </summary>
+        public float EngineRpm { get; private set; }
 
         /// <summary>Sideways force (N) of the water on the motor's lower unit, along the motor's right axis.</summary>
         public float LowerUnitForce { get; private set; }
@@ -107,7 +123,17 @@ namespace FishingVR.Boat
 
             var water = buoyancy.ActiveWater;
             Vector3 thrustPoint = propeller.position;
-            IsPropellerSubmerged = water != null && water.GetDepth(thrustPoint) > 0f;
+            bool submerged = water != null && water.GetDepth(thrustPoint) > 0f;
+            if (hasPropellerState && submerged != IsPropellerSubmerged)
+                (submerged ? onPropellerSubmerged : onPropellerSurfaced)?.Invoke();
+            IsPropellerSubmerged = submerged;
+            hasPropellerState = true;
+
+            // Engine speed: follows the throttle, but races when the propeller has no water to push.
+            float targetRpm = Mathf.Abs(Throttle) * (submerged ? 1f : settings.freeRevRatio);
+            float rpmRate = targetRpm > EngineRpm ? settings.rpmRiseRate : settings.rpmFallRate;
+            EngineRpm = Mathf.MoveTowards(EngineRpm, targetRpm, rpmRate * dt);
+
             LowerUnitForce = 0f;
             if (!IsPropellerSubmerged)
                 return;

@@ -115,6 +115,8 @@ GameObject:
   - component: {fileID: 4893530751315083323}
   - component: {fileID: 3400583707852073900}
   - component: {fileID: 5391740046034347575}
+  - component: {fileID: 3780097129693530039}
+  - component: {fileID: 2179896910684330150}
   m_Layer: 6
   m_Name: PF_Boat
   m_TagString: Untagged
@@ -215,6 +217,12 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: fc42a9a7df5513d41b49a676f465e716, type: 2}
   motorPivot: {fileID: 3217421598435431428}
   propeller: {fileID: 8863744045268914029}
+  onPropellerSurfaced:
+    m_PersistentCalls:
+      m_Calls: []
+  onPropellerSubmerged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &4893530751315083323
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -261,9 +269,49 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatSeat
   seat: {fileID: 1502175410859984330}
   sideOffset: -0.35
-  seatHeight: 0.5
+  seatHeight: 0.3
   tiltFollow: 0.25
   mountOnStart: 1
+  onMounted:
+    m_PersistentCalls:
+      m_Calls: []
+  onDismounted:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &3780097129693530039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4119829530118619942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec68842853673df4a9a1d691998ecc1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatImpacts
+  minImpactSpeed: 0.5
+  fullImpactSpeed: 4
+  cooldown: 0.25
+  onImpact:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2179896910684330150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4119829530118619942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd241e5f537f07a44b46d1a369d113ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Dev.DevBoatEventLogger
+  motor: {fileID: 4499970930747238824}
+  impacts: {fileID: 3780097129693530039}
+  seat: {fileID: 5391740046034347575}
+  tiller: {fileID: 6045847459551351054}
 --- !u!1 &4632980671019195990
 GameObject:
   m_ObjectHideFlags: 0
@@ -534,6 +582,18 @@ PrefabInstance:
     - target: {fileID: 4113540064486637208, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.0000018775468
+      objectReference: {fileID: 0}
+    - target: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.1699977
+      objectReference: {fileID: 0}
+    - target: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.4100001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
