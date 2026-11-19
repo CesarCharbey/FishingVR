@@ -32,7 +32,7 @@ namespace FishingVR.Dev
         [SerializeField] float orbitSensitivity = 0.2f;
         [Tooltip("Zoom change per wheel notch (fraction of the distance).")]
         [SerializeField, Range(0.01f, 0.5f)] float zoomStep = 0.1f;
-        [SerializeField] Vector2 distanceLimits = new Vector2(2f, 30f);
+        [MinMax] [SerializeField] Vector2 distanceLimits = new Vector2(2f, 30f);
 
         float orbitYaw;       // Extra rotation around the boat chosen with the mouse.
         float followedYaw;    // Smoothed heading of the boat.

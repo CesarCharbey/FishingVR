@@ -11,23 +11,23 @@ namespace FishingVR.Fish
     {
         [Header("Approach (visible under water)")]
         [Tooltip("Seconds before a fish shows up once the bobber is settled.")]
-        public Vector2 approachDelay = new Vector2(2f, 6f);
+        [MinMax] public Vector2 approachDelay = new Vector2(2f, 6f);
         [Tooltip("Horizontal distance from the hook where the fish appears (m).")]
-        public Vector2 spawnDistance = new Vector2(6f, 9f);
+        [MinMax] public Vector2 spawnDistance = new Vector2(6f, 9f);
         [Tooltip("Depth under the surface where the fish appears (m), clamped above the lake bed.")]
-        public Vector2 spawnDepth = new Vector2(2.5f, 3.5f);
+        [MinMax] public Vector2 spawnDepth = new Vector2(2.5f, 3.5f);
         [Tooltip("Cruise speed while approaching / circling (m/s).")]
         public float cruiseSpeed = 0.8f;
         [Tooltip("Radius of the circles around the hook (m).")]
-        public Vector2 circleRadius = new Vector2(0.7f, 1.2f);
+        [MinMax] public Vector2 circleRadius = new Vector2(0.7f, 1.2f);
         [Tooltip("Laps around the hook before the first nibble.")]
-        public Vector2 circleLaps = new Vector2(1f, 2f);
+        [MinMax] public Vector2 circleLaps = new Vector2(1f, 2f);
 
         [Header("Bite")]
         [Tooltip("Number of small nibbles before the real bite.")]
-        public Vector2Int nibbleCount = new Vector2Int(1, 3);
+        [MinMax] public Vector2Int nibbleCount = new Vector2Int(1, 3);
         [Tooltip("Seconds between nibbles.")]
-        public Vector2 nibbleInterval = new Vector2(0.8f, 1.6f);
+        [MinMax] public Vector2 nibbleInterval = new Vector2(0.8f, 1.6f);
         [Tooltip("Seconds the player has to set the hook once the fish bites.")]
         public float biteWindow = 1.2f;
         [Tooltip("How deep the fish drags the bobber during the bite (m).")]
@@ -45,9 +45,9 @@ namespace FishingVR.Fish
         [Tooltip("How far it goes sideways from the middle (m).")]
         public float lateralRange = 6f;
         [Tooltip("Seconds between random direction switches (it also turns at the edge of its range).")]
-        public Vector2 directionChangeInterval = new Vector2(1.2f, 3f);
+        [MinMax] public Vector2 directionChangeInterval = new Vector2(1.2f, 3f);
         [Tooltip("Depth while struggling (m).")]
-        public Vector2 depthRange = new Vector2(0.8f, 1.5f);
+        [MinMax] public Vector2 depthRange = new Vector2(0.8f, 1.5f);
 
         [Header("Fight - fatigue")]
         [Tooltip("Seconds of well countered struggle (rod opposite to its movement) to tire a 0 kg fish.")]
@@ -55,6 +55,6 @@ namespace FishingVR.Fish
         [Tooltip("Extra seconds per kg.")]
         public float staminaPerKg = 0.5f;
         [Tooltip("How many fatigue cycles it takes to bring the fish in (each tired phase covers a share of the distance).")]
-        public Vector2Int fatigueCycles = new Vector2Int(2, 3);
+        [MinMax] public Vector2Int fatigueCycles = new Vector2Int(2, 3);
     }
 }

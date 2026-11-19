@@ -11,7 +11,7 @@ namespace FishingVR.FX
     public class BobberWaterFX : MonoBehaviour
     {
         [Tooltip("Seconds between two rings while the bobber floats still.")]
-        [SerializeField] Vector2 idleRippleInterval = new Vector2(2.5f, 5f);
+        [MinMax] [SerializeField] Vector2 idleRippleInterval = new Vector2(2.5f, 5f);
         [Tooltip("Horizontal speed (m/s) above which the bobber leaves a wake when dragged.")]
         [SerializeField] float wakeSpeed = 0.25f;
 

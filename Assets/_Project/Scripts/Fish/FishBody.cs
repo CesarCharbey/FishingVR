@@ -51,7 +51,7 @@ namespace FishingVR.Fish
         [SerializeField] float waterDragAtSurface = 8f;
         [Header("Out of water struggle")]
         [SerializeField] float struggleKick = 0.25f;
-        [SerializeField] Vector2 struggleInterval = new Vector2(0.4f, 1.6f);
+        [MinMax] [SerializeField] Vector2 struggleInterval = new Vector2(0.4f, 1.6f);
         [Header("Under water visibility")]
         [Tooltip("Fully visible above this depth (m).")]
         [SerializeField] float clearDepth = 0.8f;
