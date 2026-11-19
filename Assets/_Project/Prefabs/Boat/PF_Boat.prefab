@@ -342,7 +342,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9612dee846be4dd19c0376022107ba34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Boat.BoatWake
+  bowPoint: {x: 0, y: 0.2, z: 1.45}
+  bowRadius: 0.35
+  sternPoint: {x: 0, y: 0.2, z: -1.4}
+  sternRadius: 0.55
+  hullStrength: 0.04
+  rockStrength: 0.05
+  contactRange: 0.4
+  propellerFoam: 2.5
+  propellerFoamRadius: 0.3
+  bowFoam: 0.8
+  bowFoamSpeed: 1.5
+  bowShoulder: 0.4
   sprayMaterial: {fileID: 2100000, guid: 6f11d5aff0864a35903037a21eaa34da, type: 2}
+  spraySpeed: 2.5
+  sprayRate: 40
+  impactSplashCount: 60
 --- !u!1 &4632980671019195990
 GameObject:
   m_ObjectHideFlags: 0
@@ -884,15 +899,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.0000018775468
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.1699977
+      value: 1.267
       objectReference: {fileID: 0}
     - target: {fileID: 7543863644107633715, guid: c27d21c80a96f8847ad6cec4ffccb067, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.4100001
+      value: -0.41
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
