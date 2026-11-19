@@ -12,6 +12,8 @@
 // 3. Crisp white foam: cellular lace along the shore, a solid jagged ring around everything poking out of the water
 //    (rocks, dock posts, hull), and the rings / wake drawn by the interactive ripples.
 // 4. A light tint towards the horizon (stylized Fresnel) instead of a realistic mirror reflection.
+// 5. Fishing spots (FishingSpot): inside each spot the water shivers, gets slightly darker (a school of fish
+//    underneath) and catches more light lines and sun glints, with an irregular edge, scaled by the spot intensity.
 //
 // Requirements: URP asset with Depth Texture and Opaque Texture enabled. The material must stay in the
 // Transparent queue: the boat's WaterMask (queue Transparent-1) hides the water inside the hull.
@@ -82,6 +84,21 @@ Shader "FishingVR/LakeWater"
         _WakeFoamStrength ("Wake Foam Strength", Range(0, 4)) = 1.5
         _CrestFoam ("Ripple Crest Foam", Range(0, 4)) = 1.2
         _RippleFoamCutoff ("Ripple Foam Threshold", Range(0.02, 1)) = 0.25
+
+        [Header(Fishing spots from FishingSpot)]
+        _SpotColor ("Spot Tint (alpha = strength)", Color) = (0.03, 0.24, 0.28, 0.4)
+        _SpotRipples ("Spot Shiver", Range(0, 2)) = 0.3
+        _SpotRippleTile ("Spot Shiver Tile Size (m)", Float) = 1.3
+        _SpotRippleSpeed ("Spot Shiver Speed", Range(0, 3)) = 0.7
+        _SpotLines ("Spot Extra Light Lines", Range(0, 2)) = 0.25
+        _SpotGlints ("Spot Extra Glints", Range(0, 1)) = 0.15
+        _SpotEdgeNoise ("Spot Edge Irregularity", Range(0, 1)) = 0.35
+        _SpotRingDensity ("Spot Rings Density", Range(0, 1)) = 0.18
+        _SpotRingSize ("Spot Rings Max Radius (m)", Range(0.1, 2)) = 0.6
+        _SpotRingPeriod ("Spot Rings Lifetime (s)", Range(0.5, 6)) = 3
+        _SpotRingWidth ("Spot Rings Width (m)", Range(0.005, 0.2)) = 0.03
+        _SpotRingCell ("Spot Rings Spacing (m)", Range(0.5, 5)) = 2.4
+        _SpotRingOpacity ("Spot Rings Opacity", Range(0, 1)) = 0.35
     }
 
     SubShader
@@ -130,6 +147,11 @@ Shader "FishingVR/LakeWater"
             float4 _WaterRippleArea;   // xy = world XZ of the area's min corner, z = 1 / area size, w = enabled
             float4 _WaterRippleParams; // x = texel size in UV, y = texel size in metres
 
+            // Set globally by FishingSpot (FishingVR.Fishing): xy = centre XZ, z = radius (m), w = intensity (0-1).
+            #define MAX_FISHING_SPOTS 8
+            float4 _FishingSpots[MAX_FISHING_SPOTS];
+            float _FishingSpotCount;
+
             CBUFFER_START(UnityPerMaterial)
                 half4 _ShallowColor;
                 half4 _DeepColor;
@@ -175,6 +197,19 @@ Shader "FishingVR/LakeWater"
                 half _WakeFoamStrength;
                 half _CrestFoam;
                 half _RippleFoamCutoff;
+                half4 _SpotColor;
+                half _SpotRipples;
+                float _SpotRippleTile;
+                half _SpotRippleSpeed;
+                half _SpotLines;
+                half _SpotGlints;
+                half _SpotEdgeNoise;
+                half _SpotRingDensity;
+                float _SpotRingSize;
+                float _SpotRingPeriod;
+                float _SpotRingWidth;
+                float _SpotRingCell;
+                half _SpotRingOpacity;
             CBUFFER_END
 
             struct Attributes
@@ -242,6 +277,76 @@ Shader "FishingVR/LakeWater"
                 foam = c.b * fade;
             }
 
+            // Fishing spots: 1 in the middle of a spot (times its intensity), fading out towards an irregular edge.
+            // margin (m) widens every spot (used to know whether a ring centred inside may reach this point).
+            half FishingSpotMask(float2 xz, half edgeNoise, float margin)
+            {
+                half mask = 0.0;
+                int count = min((int)_FishingSpotCount, MAX_FISHING_SPOTS);
+                [loop]
+                for (int i = 0; i < count; i++)
+                {
+                    float4 spot = _FishingSpots[i];
+                    if (spot.w <= 0.001)
+                        continue;
+                    float d = max(0.0, length(xz - spot.xy) - margin) / max(spot.z, 0.01);
+                    d += (edgeNoise - 0.5) * _SpotEdgeNoise;
+                    mask = max(mask, (1.0 - smoothstep(0.45, 1.0, d)) * spot.w);
+                }
+                return mask;
+            }
+
+            // Hash without sine (Dave Hoskins): stable for large world coordinates. The sine version returned
+            // exactly 0 now and then far from the origin, which lit rings all over the lake.
+            float Hash21(float2 p)
+            {
+                float3 p3 = frac(float3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return frac((p3.x + p3.y) * p3.z);
+            }
+
+            // Fishing spot rings: soft white rings opening here and there in a spot (fish rising, bubbles
+            // popping). The plane is cut in cells; a cell may hold one ring per cycle, at a random place, size and
+            // time. Whether a ring shows depends on the spot strength at the ring's centre (not at the pixel), so
+            // a ring is always whole, never cut by the edge of the spot. Nothing outside the spots.
+            // aa = pixel footprint on the water (computed in frag, outside any branch).
+            half FishingSpotRings(float2 xz, float viewDistance, float aa)
+            {
+                // No spot within reach of this point: nothing to draw (no derivative below, the early return is safe).
+                if (FishingSpotMask(xz, 0.5, _SpotRingSize * 1.2) <= 0.001)
+                    return 0.0;
+
+                float cellSize = _SpotRingCell;
+                float2 cell = floor(xz / cellSize);
+                // Thicker far away so the rings stay readable (about one pixel at least).
+                float width = max(_SpotRingWidth, viewDistance * 0.0025);
+                half rings = 0.0;
+                [unroll]
+                for (int y = -1; y <= 1; y++)
+                [unroll]
+                for (int x = -1; x <= 1; x++)
+                {
+                    float2 c = cell + float2(x, y);
+                    float lifetime = _SpotRingPeriod * lerp(0.7, 1.4, Hash21(c + 5.7));
+                    float cycle = _Time.y / lifetime + Hash21(c + 17.3);
+                    float age = frac(cycle);
+                    float index = floor(cycle);
+
+                    float2 jitter = float2(Hash21(c + index * 0.71 + 3.1), Hash21(c + index * 0.53 + 7.9));
+                    float2 center = (c + 0.15 + 0.7 * jitter) * cellSize;
+                    half strength = FishingSpotMask(center, 0.5, 0.0);
+                    half active = Hash21(c + index * 1.37 + 0.5) < _SpotRingDensity * strength ? 1.0 : 0.0;
+
+                    float size = _SpotRingSize * lerp(0.45, 1.0, Hash21(c + index * 2.11 + 9.2));
+                    float radius = sqrt(age) * size; // opens fast, then slows down
+                    float d = abs(length(xz - center) - radius);
+                    half ring = 1.0 - smoothstep(width * 0.5, width * 0.5 + aa, d);
+                    half fade = pow(1.0 - age, 1.5) * smoothstep(0.0, 0.08, age);
+                    rings = max(rings, ring * fade * active);
+                }
+                return rings;
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -252,6 +357,7 @@ Shader "FishingVR/LakeWater"
                 float viewDistance = length(toCamera);
                 float3 V = toCamera / max(viewDistance, 1e-4);
                 float2 xz = positionWS.xz;
+                float pixelFootprint = length(fwidth(xz)) + 1e-4; // size of a pixel on the water (m)
 
                 // ---- Ripples: two drifting normal layers + interactive ripples -----------------------------
                 float windAngle = radians(_WindDirection);
@@ -264,6 +370,20 @@ Shader "FishingVR/LakeWater"
                 half3 nA = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uvA));
                 half3 nB = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uvB));
                 float2 slope = -(nA.xy + nB.xy) * _RippleStrength; // tangent XY = world XZ
+
+                // Sun glints use the normal without the spot's shiver (the shiver sprinkled glints all over the spot).
+                float2 glintSlope = slope;
+
+                // Fishing spot: the water shivers (two fast layers of small ripples crossing each other).
+                half spotNoise = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, xz / 7.0 + _Time.y * 0.02).r;
+                half spot = FishingSpotMask(xz, spotNoise, 0.0);
+                if (spot > 0.001)
+                {
+                    float shiverTime = _Time.y * _SpotRippleSpeed * 0.25;
+                    half3 nS1 = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, xz / _SpotRippleTile + float2(shiverTime, shiverTime * 0.4)));
+                    half3 nS2 = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, xz / (_SpotRippleTile * 0.63) - float2(shiverTime * 0.3, shiverTime * 1.1)));
+                    slope += -(nS1.xy + nS2.xy) * _SpotRipples * 0.5 * spot;
+                }
 
                 float2 rippleSlope;
                 float wakeFoam;
@@ -360,6 +480,10 @@ Shader "FishingVR/LakeWater"
                 half3 horizonColor = lerp(_HorizonColor.rgb * light, sky, _SkyReflection);
                 color = lerp(color, horizonColor, horizon);
 
+                // Fishing spot: darker water, as over a school of fish (after the horizon tint, so it still reads
+                // from a low point of view).
+                color = lerp(color, _SpotColor.rgb * light, spot * _SpotColor.a * edgeSoftness);
+
                 // ---- Light lines (stylized caustics) --------------------------------------------------------
                 float2 patternUV = xz / _PatternTileSize + slope * _PatternWarp;
                 half lineA = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patternUV + wind * t * 0.35).r;
@@ -370,11 +494,16 @@ Shader "FishingVR/LakeWater"
                 half lineMask = smoothstep(lineEdge, lineEdge + _PatternSoftness + fwidth(lines), lines);
                 lineMask *= lerp(1.0, _PatternDeepFade, depth01);
                 lineMask *= saturate(1.0 - viewDistance / _PatternFadeDistance) * edgeSoftness;
-                color = lerp(color, _PatternColor.rgb * light, lineMask * _PatternColor.a);
+                lineMask = saturate(lineMask * (1.0 + spot * _SpotLines)); // livelier light over a spot
+                color = lerp(color, _PatternColor.rgb * light, lineMask * saturate(_PatternColor.a * (1.0 + spot * _SpotLines)));
 
                 // ---- Sun glints (small crisp sparkles) ------------------------------------------------------
                 float3 H = normalize(mainLight.direction + V);
-                half glint = AAStep(_GlintSize, saturate(dot(N, H))) * _GlintStrength * mainLight.shadowAttenuation;
+                float3 glintN = normalize(float3(-(glintSlope.x + rippleSlope.x * _InteractiveStrength), 1.0, -(glintSlope.y + rippleSlope.y * _InteractiveStrength)));
+                // More and bigger sparkles over a spot (the shivering water catches the sun).
+                half glintSize = _GlintSize - 0.02 * spot * _SpotGlints;
+                half glintStrength = _GlintStrength * (1.0 + 1.5 * spot * _SpotGlints);
+                half glint = AAStep(glintSize, saturate(dot(glintN, H))) * glintStrength * mainLight.shadowAttenuation;
                 color += mainLight.color * glint * edgeSoftness;
 
                 // ---- Foam (crisp white shapes) --------------------------------------------------------------
@@ -410,6 +539,10 @@ Shader "FishingVR/LakeWater"
                 half wakeFoamMask = AAStep(max(0.45, 1.0 - wakeAmount * 0.75), lace) * step(0.001, wakeAmount);
 
                 half foam = saturate(max(max(shoreFoam, ring), wakeFoamMask));
+                // Fishing spot rings: see-through, so they read as light ripples rather than white paint.
+                half spotRings = FishingSpotRings(xz, viewDistance, pixelFootprint) * edgeSoftness;
+                color = lerp(color, _FoamColor.rgb * light, spotRings * _SpotRingOpacity);
+
                 color = lerp(color, _FoamColor.rgb * light, foam * _FoamColor.a);
 
                 color = MixFog(color, input.fogFactor);

@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1839258582889216877
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2469725491397321185}
+  - component: {fileID: 7207029081198962045}
+  - component: {fileID: 6756078218320802536}
+  - component: {fileID: 7282740649991029275}
+  m_Layer: 0
+  m_Name: PF_FishingSpot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2469725491397321185
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839258582889216877}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7207029081198962045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839258582889216877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22683bff8e5065a459d72529ae9ab46d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fishing.FishingSpot
+  radius: 4
+  arriveDuration: 30
+  activeMinutes: 12
+  leaveDuration: 45
+  destroyWhenGone: 1
+  catchDepletion: 0.2
+  escapeDepletion: 0.1
+  emptyIntensity: 0.3
+  intensitySmoothing: 0.15
+  editorPreviewIntensity: 1
+  onActive:
+    m_PersistentCalls:
+      m_Calls: []
+  onLeaving:
+    m_PersistentCalls:
+      m_Calls: []
+  onGone:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &6756078218320802536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839258582889216877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8859fa3f541762d4c8078d885e2d8279, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fishing.FishingSpotBubbles
+  clustersPerMinute: 45
+  bubblesPerCluster: {x: 4, y: 9}
+  startDepth: {x: 0.6, y: 1.4}
+  riseSpeed: 0.35
+  bubbleSize: 2
+  ringSize: {x: 0.15, y: 0.35}
+  popRipple: 0.006
+--- !u!114 &7282740649991029275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839258582889216877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4866222eabd4e9040b65b8b635e7ee64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fishing.FishingSpotJumps
+  species:
+  - {fileID: 11400000, guid: b69b1d98043a53146bf2933a2cae5011, type: 2}
+  - {fileID: 11400000, guid: 099452174e9ee5743b5785c42bb40a81, type: 2}
+  - {fileID: 11400000, guid: 631be337cdb51164983a26f58ef13204, type: 2}
+  - {fileID: 11400000, guid: 2ca8927640c81aa45a4ec3950a953d50, type: 2}
+  - {fileID: 11400000, guid: 3c258678517c90a46913aa974cc06b22, type: 2}
+  - {fileID: 11400000, guid: 3663293414c4cb14cbc23e6575ae663a, type: 2}
+  interval: {x: 5, y: 14}
+  farDistance: 30
+  nearDistance: 8
+  nearRateMultiplier: 0.2
+  minIntensity: 0.15
+  height: {x: 0.4, y: 1}
+  length: {x: 0.8, y: 1.8}
+  underwaterStart: 0.25
+  sizeMultiplier: 1
+  splashStrength: 0.9
