@@ -87,7 +87,7 @@ namespace FishingVR.Boat
             yield return null;
             yield return null;
 
-            var origin = FindFirstObjectByType<XROrigin>();
+            var origin = FindAnyObjectByType<XROrigin>();
             if (origin == null)
                 Debug.LogWarning("[BoatSeat] Mount On Start: no active XR Origin in the scene.", this);
             else
