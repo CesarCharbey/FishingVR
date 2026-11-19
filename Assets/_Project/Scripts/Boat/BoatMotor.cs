@@ -68,6 +68,9 @@ namespace FishingVR.Boat
         /// <summary>Part of the motor that rotates to steer (its position is the steering axis).</summary>
         public Transform MotorPivot => motorPivot;
 
+        /// <summary>Propeller transform (where the thrust is applied).</summary>
+        public Transform Propeller => propeller;
+
         public BoatMotorSettings Settings
         {
             get => settings;
