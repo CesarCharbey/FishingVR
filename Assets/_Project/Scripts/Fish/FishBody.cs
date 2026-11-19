@@ -153,6 +153,11 @@ namespace FishingVR.Fish
             fb.grab.selectEntered.AddListener(fb.OnGrabbed);
             fb.grab.selectExited.AddListener(fb.OnReleased);
 
+            // Carried items don't collide with the boat hull (its convex collider would push them out / the boat around).
+            var itemsLayer = LayerMask.NameToLayer("Items");
+            if (itemsLayer >= 0)
+                foreach (var t in root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = itemsLayer;
+
             // Visibility fade.
             fb.renderers = root.GetComponentsInChildren<Renderer>();
             fb.originalMaterials = new Material[fb.renderers.Length][];

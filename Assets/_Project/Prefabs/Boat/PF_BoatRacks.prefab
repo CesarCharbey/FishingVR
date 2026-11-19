@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2766775542070531924}
   - component: {fileID: 7212621820281775571}
   - component: {fileID: 5994987482768110751}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Socket_LandingNet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +113,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8257094161384177445}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Attach
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -146,7 +146,7 @@ GameObject:
   - component: {fileID: 789619247415319106}
   - component: {fileID: 1774862070831878894}
   - component: {fileID: 8772548281637063953}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Socket_FishingRod
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -248,7 +248,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6895385976865719201}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Attach
   m_TagString: Untagged
   m_Icon: {fileID: 0}
