@@ -19,10 +19,14 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BedDepthTex:
+        m_Texture: {fileID: 2800000, guid: 369aa2db9d629414f9efcddeb9258127, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _FoamTex:
         m_Texture: {fileID: 2800000, guid: f9f98d3d123b4e909e9838ba713bdb0a, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -32,46 +36,55 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _PatternTex:
-        m_Texture: {fileID: 2800000, guid: e62f60e36a2b4783a845f93dd32d1cc8, type: 3}
+        m_Texture: {fileID: 2800000, guid: 8da67103aa52db24da24f3c5a58d613f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BedTolerance: 0.08
     - _ColorBands: 0
-    - _ColorDepth: 3.5
+    - _ColorDepth: 4
     - _CrestFoam: 1.2
+    - _FloorCaustics: 0.7
+    - _FloorCausticsDepth: 2.5
+    - _FloorCausticsTile: 2.5
     - _FoamTileSize: 1.4
     - _GlintSize: 0.985
-    - _GlintStrength: 0.6
+    - _GlintStrength: 0.3
     - _HorizonPower: 4
-    - _HorizonStrength: 0.55
+    - _HorizonStrength: 0.45
     - _InteractiveStrength: 1
     - _LightInfluence: 0.5
-    - _PatternCutoff: 0.5
-    - _PatternDeepFade: 0.45
+    - _PatternCutoff: 0.3
+    - _PatternDeepFade: 0.6
     - _PatternFadeDistance: 60
-    - _PatternTileSize: 3.5
-    - _PatternWarp: 0.6
+    - _PatternSoftness: 0.2
+    - _PatternTileSize: 6
+    - _PatternWarp: 0.5
     - _Refraction: 0.035
-    - _RingFoamDepth: 0.07
-    - _RippleFoamCutoff: 0.25
+    - _RingFoamDepth: 0.06
+    - _RippleFoamCutoff: 0.2
     - _RippleStrength: 0.35
     - _RippleTileA: 7
     - _RippleTileB: 2.3
     - _ShadowStrength: 0.35
-    - _ShallowOpacity: 0.25
-    - _ShoreFoamDensity: 0.55
-    - _ShoreFoamDepth: 0.45
+    - _ShallowOpacity: 0.12
+    - _ShoreFade: 0.25
+    - _ShoreFoamBreathing: 0.8
+    - _ShoreFoamDensity: 0.6
+    - _ShoreFoamDepth: 0.5
+    - _ShoreFoamTile: 1.8
     - _SkyReflection: 0.3
-    - _Visibility: 1.8
+    - _Visibility: 2.5
     - _WakeFoamStrength: 1.5
     - _WindDirection: 35
     - _WindSpeed: 0.12
     m_Colors:
-    - _DeepColor: {r: 0.05, g: 0.3, b: 0.4, a: 1}
+    - _BedDepthArea: {r: -98, g: -202, b: 0.0038461538, a: 0.0015151515}
+    - _DeepColor: {r: 0.08, g: 0.55, b: 0.72, a: 1}
     - _FoamColor: {r: 0.96, g: 0.99, b: 0.98, a: 1}
-    - _HorizonColor: {r: 0.55, g: 0.82, b: 0.86, a: 1}
-    - _PatternColor: {r: 0.85, g: 1, b: 0.98, a: 0.3}
-    - _ShallowColor: {r: 0.36, g: 0.78, b: 0.7, a: 1}
+    - _HorizonColor: {r: 0.62, g: 0.88, b: 0.92, a: 1}
+    - _PatternColor: {r: 0.82, g: 1, b: 1, a: 0.32}
+    - _ShallowColor: {r: 0.5, g: 0.88, b: 0.82, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

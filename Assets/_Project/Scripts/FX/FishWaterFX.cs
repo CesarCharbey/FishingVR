@@ -139,8 +139,8 @@ namespace FishingVR.FX
             if (wakeTimer > 0f) return;
             var fast = Mathf.InverseLerp(wakeSpeed, 4f, flatSpeed);
             wakeTimer = Mathf.Lerp(0.16f, 0.06f, fast);
-            var strength = shallow * (0.35f + 0.65f * fast);
-            WaterFX.Ripple(surface, (0.2f + 0.25f * fast) * size, strength);
+            var strength = Mathf.Min(1f, shallow * (0.6f + 0.6f * fast));
+            WaterFX.Ripple(surface, (0.25f + 0.3f * fast) * size, strength);
             if (shallow > 0.45f && fast > 0.2f)
             {
                 // Droplets thrown sideways, like a bow wave: the faster, the more.

@@ -50,9 +50,9 @@ MonoBehaviour:
   resolution: 512
   waveSpeed: 1.1
   waveHalfLife: 1.4
-  foamHalfLife: 2
+  foamHalfLife: 0.8
   stepsPerSecond: 60
   edgeWidth: 0.12
   steepFoamThreshold: 0.05
-  steepFoam: 0.5
-  foamSpread: 1.5
+  steepFoam: 0.4
+  foamSpread: 0.8

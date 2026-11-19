@@ -349,9 +349,9 @@ MonoBehaviour:
   hullStrength: 0.04
   rockStrength: 0.05
   contactRange: 0.4
-  propellerFoam: 2.5
+  propellerFoam: 0.6
   propellerFoamRadius: 0.3
-  bowFoam: 0.8
+  bowFoam: 0.35
   bowFoamSpeed: 1.5
   bowShoulder: 0.4
   sprayMaterial: {fileID: 2100000, guid: 6f11d5aff0864a35903037a21eaa34da, type: 2}

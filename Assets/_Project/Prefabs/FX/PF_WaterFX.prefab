@@ -4692,9 +4692,9 @@ MonoBehaviour:
   ripples: {fileID: 7855098015102692355}
   bubbles: {fileID: 6620343320898737557}
   waterPlane: {fileID: 4164049427885868136}
-  dropletColor: {r: 0.88, g: 0.95, b: 1, a: 0.85}
-  foamColor: {r: 1, g: 1, b: 1, a: 0.55}
-  rippleColor: {r: 0.92, g: 0.97, b: 1, a: 0.5}
+  dropletColor: {r: 0.95, g: 0.99, b: 1, a: 1}
+  foamColor: {r: 1, g: 1, b: 1, a: 1}
+  rippleColor: {r: 0.97, g: 1, b: 1, a: 0.95}
   bubbleColor: {r: 0.9, g: 0.97, b: 1, a: 0.7}
   surfaceOffset: 0.012
 --- !u!1 &5681282189551707291
@@ -9580,7 +9580,7 @@ ParticleSystem:
     gravityModifier:
       serializedVersion: 3
       minMaxState: 0
-      scalar: 0.15
+      scalar: 0
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -9959,14 +9959,14 @@ ParticleSystem:
         m_NumAlphaKeys: 2
   UVModule:
     serializedVersion: 2
-    enabled: 0
+    enabled: 1
     mode: 0
     timeMode: 0
     fps: 30
     frameOverTime:
       serializedVersion: 3
-      minMaxState: 1
-      scalar: 0.9999
+      minMaxState: 0
+      scalar: 0
       minScalar: 0.9999
       maxCurve:
         serializedVersion: 2
@@ -10000,8 +10000,8 @@ ParticleSystem:
         m_RotationOrder: 4
     startFrame:
       serializedVersion: 3
-      minMaxState: 0
-      scalar: 0
+      minMaxState: 3
+      scalar: 0.9999
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -10016,8 +10016,8 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     speedRange: {x: 0, y: 1}
-    tilesX: 1
-    tilesY: 1
+    tilesX: 2
+    tilesY: 2
     animationType: 0
     rowIndex: 0
     cycles: 1
@@ -11560,7 +11560,7 @@ ParticleSystemRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_RenderMode: 0
+  m_RenderMode: 2
   m_MeshDistribution: 0
   m_SortMode: 0
   m_MinParticleSize: 0

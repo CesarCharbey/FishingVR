@@ -23,9 +23,9 @@ namespace FishingVR.FX
         [SerializeField] Transform waterPlane;
 
         [Header("Look")]
-        [SerializeField] Color dropletColor = new Color(0.88f, 0.95f, 1f, 0.85f);
-        [SerializeField] Color foamColor = new Color(1f, 1f, 1f, 0.55f);
-        [SerializeField] Color rippleColor = new Color(0.92f, 0.97f, 1f, 0.5f);
+        [SerializeField] Color dropletColor = new Color(0.95f, 0.99f, 1f, 1f);
+        [SerializeField] Color foamColor = new Color(1f, 1f, 1f, 1f);
+        [SerializeField] Color rippleColor = new Color(0.97f, 1f, 1f, 0.95f);
         [SerializeField] Color bubbleColor = new Color(0.9f, 0.97f, 1f, 0.7f);
         [Tooltip("Height of the ripples above the water surface (avoids z-fighting).")]
         [SerializeField] float surfaceOffset = 0.012f;
@@ -103,7 +103,7 @@ namespace FishingVR.FX
             }
         }
 
-        /// <summary>White puff on the surface.</summary>
+        /// <summary>Flat foam patch on the surface (cartoon blob that breaks up).</summary>
         public static void Foam(Vector3 position, float size, float strength = 1f)
         {
             var fx = Instance;
@@ -114,10 +114,10 @@ namespace FishingVR.FX
             c.a *= Mathf.Clamp01(strength);
             var p = new ParticleSystem.EmitParams
             {
-                position = new Vector3(position.x, water + 0.03f, position.z) + Random.insideUnitSphere * size * 0.15f,
-                velocity = Vector3.up * Random.Range(0.1f, 0.3f),
+                position = new Vector3(position.x, water + 0.015f, position.z) + Vector3.ProjectOnPlane(Random.insideUnitSphere, Vector3.up) * size * 0.2f,
+                velocity = Vector3.zero,
                 startSize = size * Random.Range(0.8f, 1.2f),
-                startLifetime = Random.Range(0.35f, 0.6f),
+                startLifetime = Random.Range(0.6f, 1.1f),
                 startColor = c,
                 rotation = Random.Range(0f, 360f),
                 applyShapeToPosition = false,
@@ -146,7 +146,7 @@ namespace FishingVR.FX
                 Spray(surface + new Vector3(dir.x, 0f, dir.y) * 0.05f * s, outward + up, 1, 0.15f, Mathf.Lerp(0.8f, 1.5f, Mathf.Clamp01(s - 0.5f)));
             }
             var puffs = Mathf.RoundToInt(Mathf.Lerp(1f, 5f, Mathf.Clamp01(s)));
-            for (var i = 0; i < puffs; i++) Foam(surface, 0.12f + 0.25f * s, 0.6f + 0.4f * Mathf.Clamp01(s));
+            for (var i = 0; i < puffs; i++) Foam(surface, 0.15f + 0.3f * s, 0.7f + 0.3f * Mathf.Clamp01(s));
             Ripple(surface, 0.35f + 0.6f * s, 1f);
             if (s > 0.4f) Ripple(surface, 0.2f + 0.3f * s, 0.7f);
         }

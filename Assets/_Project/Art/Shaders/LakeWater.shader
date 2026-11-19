@@ -7,8 +7,9 @@
 // 1. Colour gradient with the depth of the water: light turquoise over the shallows, darker lake blue-green
 //    further out (optionally in flat bands). The bottom and the fish stay visible through the water, wobbling
 //    with the ripples, and fade out with the distance travelled in the water ("Visibility").
-// 2. A net of wavy light lines drifting on the surface (stylized caustics), distorted by the ripples.
-// 3. Crisp white foam: lace along the shore, a solid jagged ring around everything poking out of the water
+// 2. A net of thick, soft light bands drifting on the surface, distorted by the ripples, and caustics
+//    dancing on the bottom of the shallows (T_Water_Caustics: R/G = cell-edge distance fields, B = blobs).
+// 3. Crisp white foam: cellular lace along the shore, a solid jagged ring around everything poking out of the water
 //    (rocks, dock posts, hull), and the rings / wake drawn by the interactive ripples.
 // 4. A light tint towards the horizon (stylized Fresnel) instead of a realistic mirror reflection.
 //
@@ -41,14 +42,18 @@ Shader "FishingVR/LakeWater"
         _WindDirection ("Wind Direction (degrees)", Range(0, 360)) = 35
         _Refraction ("Underwater Wobble", Range(0, 0.1)) = 0.035
 
-        [Header(Light lines)]
-        [NoScaleOffset] _PatternTex ("Line Pattern", 2D) = "black" {}
+        [Header(Light lines and caustics)]
+        [NoScaleOffset] _PatternTex ("Caustics (R G = cell edge fields, B = blobs)", 2D) = "black" {}
         _PatternColor ("Line Colour (alpha = strength)", Color) = (0.85, 1, 0.98, 0.3)
         _PatternTileSize ("Line Pattern Tile Size (m)", Float) = 3.5
-        _PatternCutoff ("Line Thickness", Range(0.05, 0.95)) = 0.5
+        _PatternCutoff ("Line Thickness", Range(0.02, 0.95)) = 0.5
+        _PatternSoftness ("Line Softness", Range(0, 0.5)) = 0.15
         _PatternWarp ("Line Wobble", Range(0, 2)) = 0.6
         _PatternDeepFade ("Lines Kept Over Deep Water", Range(0, 1)) = 0.45
         _PatternFadeDistance ("Lines Fade Distance (m)", Float) = 60
+        _FloorCaustics ("Caustics On The Bottom", Range(0, 2)) = 0.6
+        _FloorCausticsTile ("Bottom Caustics Tile Size (m)", Float) = 2.5
+        _FloorCausticsDepth ("Bottom Caustics Fade Depth (m)", Range(0.1, 10)) = 2.5
 
         [Header(Foam)]
         [NoScaleOffset] _FoamTex ("Foam Noise", 2D) = "white" {}
@@ -56,7 +61,15 @@ Shader "FishingVR/LakeWater"
         _FoamTileSize ("Foam Tile Size (m)", Float) = 1.4
         _ShoreFoamDepth ("Shore Foam Depth (m)", Range(0, 2)) = 0.45
         _ShoreFoamDensity ("Shore Foam Density", Range(0, 1)) = 0.55
+        _ShoreFoamTile ("Shore Lace Tile Size (m)", Float) = 2
+        _ShoreFoamBreathing ("Shore Foam Lapping Speed", Range(0, 3)) = 0.8
         _RingFoamDepth ("Contact Ring Depth (m)", Range(0, 0.5)) = 0.07
+        _ShoreFade ("Fade Into The Bank (m of depth)", Range(0.01, 0.6)) = 0.15
+        _BedTolerance ("Lake Bed Match Tolerance (m)", Range(0.01, 0.3)) = 0.08
+
+        [Header(Lake bed depth baked by FishingVR Eau Calculer la profondeur du lac)]
+        [NoScaleOffset] _BedDepthTex ("Lake Bed Depth (baked)", 2D) = "black" {}
+        _BedDepthArea ("Lake Bed Area (min X, min Z, 1/size X, 1/size Z)", Vector) = (0, 0, 0, 0)
 
         [Header(Lighting)]
         _LightInfluence ("Sun and Sky Influence", Range(0, 1)) = 0.5
@@ -110,6 +123,7 @@ Shader "FishingVR/LakeWater"
             TEXTURE2D(_NormalMap);  SAMPLER(sampler_NormalMap);
             TEXTURE2D(_FoamTex);    SAMPLER(sampler_FoamTex);
             TEXTURE2D(_PatternTex); SAMPLER(sampler_PatternTex);
+            TEXTURE2D(_BedDepthTex); SAMPLER(sampler_BedDepthTex);
 
             // Set globally by WaterRipples (FishingVR.Water). _WaterRippleArea.w = 0 when there is no simulation.
             TEXTURE2D(_WaterRippleTex); SAMPLER(sampler_WaterRippleTex);
@@ -136,14 +150,23 @@ Shader "FishingVR/LakeWater"
                 half4 _PatternColor;
                 float _PatternTileSize;
                 half _PatternCutoff;
+                half _PatternSoftness;
                 half _PatternWarp;
                 half _PatternDeepFade;
                 float _PatternFadeDistance;
+                half _FloorCaustics;
+                float _FloorCausticsTile;
+                float _FloorCausticsDepth;
                 half4 _FoamColor;
                 float _FoamTileSize;
                 float _ShoreFoamDepth;
                 half _ShoreFoamDensity;
+                float _ShoreFoamTile;
+                half _ShoreFoamBreathing;
                 float _RingFoamDepth;
+                float _ShoreFade;
+                float _BedTolerance;
+                float4 _BedDepthArea;
                 half _LightInfluence;
                 half _ShadowStrength;
                 half _GlintStrength;
@@ -184,10 +207,13 @@ Shader "FishingVR/LakeWater"
             }
 
             // Anti-aliased step (x >= edge): a crisp cartoon edge that does not shimmer (about one pixel wide).
+            // The width is capped: where the input jumps between two pixels (the silhouette of something under
+            // the water, where the depth jumps by metres), an uncapped width turns the step into 0.5 on both
+            // sides and draws a pale outline around every submerged object.
             float AAStep(float edge, float x)
             {
                 float v = x - edge;
-                float w = max(fwidth(v) * 0.75, 1e-4);
+                float w = clamp(fwidth(v) * 0.75, 1e-4, 0.04);
                 return smoothstep(-w, w, v);
             }
 
@@ -267,7 +293,43 @@ Shader "FishingVR/LakeWater"
                 float3 straightScene = _WorldSpaceCameraPos - toCamera * (straightEyeDepth / surfaceEyeDepth);
                 float waterDepth = max(0.0, positionWS.y - straightScene.y);          // vertical depth
                 float waterPath = max(0.0, sceneEyeDepth - surfaceEyeDepth) * (viewDistance / surfaceEyeDepth);
-                half edgeSoftness = saturate(waterDepth / 0.03); // no hard line where the water meets the bank
+                half edgeSoftness = saturate(waterDepth / _ShoreFade); // fades into the bank, no hard line
+                // Vertical surfaces (posts, hull, propeller, rock sides) make the depth jump from pixel to pixel.
+                half depthSlope = fwidth(waterDepth) / max(fwidth(xz.x) + fwidth(xz.y), 1e-4);
+                half steep = saturate((depthSlope - 0.6) / 0.8);
+
+                // Depth of the lake bed (baked by LakeDepthBaker: terrain and rocks only, 8 bits = -1..5 m). What we see through the water is either
+                // the bed itself (keep the exact per-pixel depth) or something above it: hull, post, fish... Those
+                // must not be taken for a beach (no shore foam, no caustics, no shallow colour on them).
+                float bedDepth = waterDepth;
+                half onBed = 1.0;     // flat-ish bed (caustics, shore foam, colour from the exact depth)
+                half bakedBed = 1.0;  // part of the baked bed, vertical sides included (rocks: contact ring)
+                if (_BedDepthArea.z > 0.0)
+                {
+                    float2 bedUV = (xz - _BedDepthArea.xy) * _BedDepthArea.zw;
+                    float2 sceneBedUV = (straightScene.xz - _BedDepthArea.xy) * _BedDepthArea.zw;
+                    if (all(bedUV > 0.0) && all(bedUV < 1.0))
+                    {
+                        float bakedHere = SAMPLE_TEXTURE2D_LOD(_BedDepthTex, sampler_BedDepthTex, bedUV, 0).r * 6.0 - 1.0;
+                        float bakedThere = SAMPLE_TEXTURE2D_LOD(_BedDepthTex, sampler_BedDepthTex, saturate(sceneBedUV), 0).r * 6.0 - 1.0;
+                        // The visible point is the bed itself: within a few cm of the baked depth (not the bottom
+                        // of a post or the propeller above a shallow bed), and not a vertical surface.
+                        bakedBed = step(bakedThere - _BedTolerance, waterDepth);
+                        onBed = bakedBed * (1.0 - steep);
+                        bedDepth = onBed > 0.5 ? waterDepth : max(bakedHere, 0.0);
+                    }
+                }
+
+                // ---- Caustics on the bottom: light bands dancing on the sand, fading with depth -------------
+                {
+                    float2 floorUV = straightScene.xz / _FloorCausticsTile + slope * 0.4;
+                    half cA = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, floorUV + wind * t * 0.6).r;
+                    half cB = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, floorUV * 0.77 - crossWind * t * 0.45 + 0.41).g;
+                    half caustic = smoothstep(0.55, 0.9, max(cA, cB)) + smoothstep(0.75, 0.95, min(cA, cB)) * 0.5;
+                    half floorFade = (1.0 - saturate(waterDepth / _FloorCausticsDepth)) * edgeSoftness * onBed
+                                   * saturate(1.0 - viewDistance / _PatternFadeDistance);
+                    sceneColor *= 1.0 + caustic * floorFade * _FloorCaustics;
+                }
 
                 // ---- Lighting (kept light: the palette does most of the work) ------------------------------
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(positionWS));
@@ -277,7 +339,7 @@ Shader "FishingVR/LakeWater"
                 half3 light = lerp(half3(1, 1, 1), sunAndSky, _LightInfluence) * shadow;
 
                 // ---- Water colour: gradient with depth ------------------------------------------------------
-                float depth01 = saturate(waterDepth / _ColorDepth);
+                float depth01 = saturate(bedDepth / _ColorDepth);
                 depth01 = 1.0 - (1.0 - depth01) * (1.0 - depth01); // ease out: the shallows change colour fast
                 if (_ColorBands >= 1.0)
                     depth01 = saturate(floor(depth01 * _ColorBands + 0.5) / _ColorBands);
@@ -299,8 +361,10 @@ Shader "FishingVR/LakeWater"
                 float2 patternUV = xz / _PatternTileSize + slope * _PatternWarp;
                 half lineA = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patternUV + wind * t * 0.35).r;
                 half lineB = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patternUV * 0.71 + crossWind * t * 0.25 + 0.37).r;
-                half lines = max(lineA, lineB * 0.85);
-                half lineMask = AAStep(1.0 - _PatternCutoff, lines);
+                half lines = max(lineA, lineB * 0.9);
+                // Thick, soft-edged organic bands (the texture is a distance-to-edge field).
+                half lineEdge = 1.0 - _PatternCutoff;
+                half lineMask = smoothstep(lineEdge, lineEdge + _PatternSoftness + fwidth(lines), lines);
                 lineMask *= lerp(1.0, _PatternDeepFade, depth01);
                 lineMask *= saturate(1.0 - viewDistance / _PatternFadeDistance) * edgeSoftness;
                 color = lerp(color, _PatternColor.rgb * light, lineMask * _PatternColor.a);
@@ -314,18 +378,33 @@ Shader "FishingVR/LakeWater"
                 float2 foamUV = xz / _FoamTileSize;
                 half noise = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUV + wind * t * 0.3).r * 0.6
                            + SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUV * 0.53 - crossWind * t * 0.2).r * 0.4;
-                half lace = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, xz / (_FoamTileSize * 1.3) + slope * 0.3 + wind * t * 0.2).r;
+                float2 laceUV = xz / _ShoreFoamTile + slope * 0.25 + wind * t * 0.15;
+                half lace = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, laceUV).r; // 1 on the cell edges
+                half blobs = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, xz / (_ShoreFoamTile * 2.7) - crossWind * t * 0.1).b;
 
-                // Shore lace: solid at the water's edge, breaking into a lacy net further out.
-                half shore = 1.0 - saturate(waterDepth / max(_ShoreFoamDepth, 1e-3));
-                half shoreFoam = AAStep(1.0 - shore * _ShoreFoamDensity * 1.6, lace * 0.75 + noise * 0.35) * step(0.001, shore);
+                // Shore lace: a net of white cells, dense at the water's edge (holes only in the middle of the
+                // cells), thinning out into lines then nothing further out; it laps in and out slowly.
+                half shore = 1.0 - saturate(bedDepth / max(_ShoreFoamDepth, 1e-3));
+                half lapping = 0.75 + 0.25 * sin(_Time.y * _ShoreFoamBreathing + blobs * 6.2832);
+                half amount = shore * _ShoreFoamDensity * lapping;
+                // Never fully solid: the middle of the cells always stays open (lace, not a white band).
+                half laceEdge = max(0.22, 1.0 - amount * 1.35 + (blobs - 0.5) * 0.65); // in patches
+                half shoreFoam = AAStep(laceEdge, lace) * step(0.001, shore);
+                // The last centimetres: the lace breaks up irregularly while the water fades into the bank,
+                // so the waterline is not a clean cut.
+                shoreFoam *= AAStep((0.05 + 0.9 * noise) * 0.75, waterDepth / _ShoreFade);
 
                 // Contact ring: a solid jagged band around everything that pokes out of the water.
-                half ring = AAStep(waterDepth, _RingFoamDepth * (0.55 + 0.9 * noise));
+                // Only where the depth jumps (rocks, banks): a gently sloping beach gets the lace instead.
+                // Thinner when seen from a low angle (the band would smear down the submerged part of the object).
+                // Only on the lake bed itself (baked): not on the fish, the hull or the dock posts.
+                half ring = AAStep(waterDepth, _RingFoamDepth * (0.4 + 0.9 * noise) * saturate(V.y * 2.0)) * steep * bakedBed;
 
-                // Interactive ripples: crisp rings and wake trails.
+                // Wake foam drawn as lace like the shore (dense right behind the propeller, thinning into lines
+                // further back), never as a solid white mass.
                 half wake = wakeFoam * _WakeFoamStrength + length(rippleSlope) * _CrestFoam;
-                half wakeFoamMask = AAStep(_RippleFoamCutoff, wake * (0.65 + 0.7 * noise));
+                half wakeAmount = saturate((wake * (0.7 + 0.6 * noise) - _RippleFoamCutoff) / max(1.0 - _RippleFoamCutoff, 0.05));
+                half wakeFoamMask = AAStep(max(0.45, 1.0 - wakeAmount * 0.75), lace) * step(0.001, wakeAmount);
 
                 half foam = saturate(max(max(shoreFoam, ring), wakeFoamMask));
                 color = lerp(color, _FoamColor.rgb * light, foam * _FoamColor.a);

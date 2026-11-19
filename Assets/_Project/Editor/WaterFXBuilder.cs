@@ -25,14 +25,11 @@ namespace FishingVR.EditorTools
             Directory.CreateDirectory(MatDir);
             Directory.CreateDirectory(PrefabDir);
 
-            var dot = MakeTexture("T_FX_SoftDot", 64, r => Mathf.Pow(Mathf.Clamp01(1f - r), 1.6f));
-            var ring = MakeTexture("T_FX_Ring", 128, r =>
-            {
-                // Thin bright crest, soft trough inside.
-                var crest = Mathf.Exp(-Mathf.Pow((r - 0.86f) / 0.05f, 2f));
-                var inner = Mathf.Exp(-Mathf.Pow((r - 0.74f) / 0.08f, 2f)) * 0.25f;
-                return Mathf.Clamp01(crest + inner) * (r < 1f ? 1f : 0f);
-            });
+            // Cartoon shapes: alpha = distance field (1 = core of the shape, 0 = outside), eroded over the
+            // particle's life by the ToonWaterParticle shader (crisp white shapes that thin out and break up).
+            var drop = MakeTextureXY("T_FX_Drop", 64, (x, y) => Mathf.Clamp01(1f - Mathf.Sqrt(x * x + y * y) / 0.9f));
+            var ring = MakeTextureXY("T_FX_FoamRing", 256, FoamRing);
+            var blobs = MakeTextureXY("T_FX_FoamBlobs", 256, FoamBlobAtlas);
             var bubble = MakeTexture("T_FX_Bubble", 64, r =>
             {
                 var rim = Mathf.Exp(-Mathf.Pow((r - 0.8f) / 0.1f, 2f));
@@ -40,9 +37,9 @@ namespace FishingVR.EditorTools
             });
 
             // Droplets / foam / ripples after the water (queue 3000), bubbles before it (seen through it).
-            var mDroplet = MakeMaterial("M_FX_Droplet", dot, 3010);
-            var mFoam = MakeMaterial("M_FX_Foam", dot, 3005);
-            var mRipple = MakeMaterial("M_FX_Ripple", ring, 3002);
+            var mDroplet = MakeToonMaterial("M_FX_Droplet", drop, 3010);
+            var mFoam = MakeToonMaterial("M_FX_Foam", blobs, 3005);
+            var mRipple = MakeToonMaterial("M_FX_Ripple", ring, 3002);
             var mBubble = MakeMaterial("M_FX_Bubble", bubble, 2990);
 
             var root = new GameObject("PF_WaterFX");
@@ -90,10 +87,19 @@ namespace FishingVR.EditorTools
                 sub.AddSubEmitter(drops, ParticleSystemSubEmitterType.Collision, ParticleSystemSubEmitterProperties.InheritNothing, 0.35f);
             }
 
-            var foam = MakeSystem(root.transform, "Foam", mFoam, 300, ParticleSystemRenderMode.Billboard);
+            var foam = MakeSystem(root.transform, "Foam", mFoam, 300, ParticleSystemRenderMode.HorizontalBillboard);
             {
                 var main = foam.main;
-                main.gravityModifier = 0.15f;
+                main.gravityModifier = 0f;
+                // 2x2 atlas of blob shapes, one picked at random.
+                var sheet = foam.textureSheetAnimation;
+                sheet.enabled = true;
+                sheet.numTilesX = 2;
+                sheet.numTilesY = 2;
+                sheet.animation = ParticleSystemAnimationType.WholeSheet;
+                sheet.frameOverTime = new ParticleSystem.MinMaxCurve(0f);
+                sheet.startFrame = new ParticleSystem.MinMaxCurve(0f, 3.999f);
+                sheet.cycleCount = 1;
                 var sol = foam.sizeOverLifetime;
                 sol.enabled = true;
                 sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.5f, 1f, 1.4f));
@@ -173,6 +179,84 @@ namespace FishingVR.EditorTools
             col.color = g;
         }
 
+        // ---------- Cartoon shapes (distance fields) ----------
+
+        /// <summary>Wobbly foam ring of uneven thickness, with weak spots where it breaks first.</summary>
+        static float FoamRing(float x, float y)
+        {
+            var r = Mathf.Sqrt(x * x + y * y);
+            var a = Mathf.Atan2(y, x);
+            var radius = 0.76f + 0.035f * Mathf.Sin(3f * a + 0.7f) + 0.02f * Mathf.Sin(7f * a + 2.1f);
+            var half = 0.1f * (0.6f + 0.25f * Mathf.Sin(2f * a + 1.3f) + 0.15f * Mathf.Sin(5f * a + 0.2f));
+            var f = 1f - Mathf.Abs(r - radius) / half;
+            f -= 0.75f * Mathf.Pow(Noise(x * 9f + 11f, y * 9f + 3f), 1.5f); // erodes unevenly: breaks into pieces
+            return Mathf.Clamp01(f * 1.4f) * (r < 0.98f ? 1f : 0f);
+        }
+
+        /// <summary>2x2 atlas of splash / foam blobs (a few merged discs each, lumpy outline).</summary>
+        static float FoamBlobAtlas(float x, float y)
+        {
+            // x, y in -1..1 over the whole texture: find the tile and local coordinates in -1..1.
+            var u = (x + 1f) * 0.5f * 2f;
+            var v = (y + 1f) * 0.5f * 2f;
+            var tile = Mathf.Min(1, (int)u) + 2 * Mathf.Min(1, (int)v);
+            var lx = (u - Mathf.Floor(Mathf.Min(u, 1.999f))) * 2f - 1f;
+            var ly = (v - Mathf.Floor(Mathf.Min(v, 1.999f))) * 2f - 1f;
+            var rng = new System.Random(17 + tile * 31);
+            var count = 4 + tile % 4;
+            var sum = 0f;
+            for (var i = 0; i < count; i++)
+            {
+                var cx = (float)(rng.NextDouble() * 0.9 - 0.45);
+                var cy = (float)(rng.NextDouble() * 0.9 - 0.45);
+                var rad = (float)(0.1 + rng.NextDouble() * (i < 2 ? 0.25 : 0.12));
+                var d = Mathf.Sqrt((lx - cx) * (lx - cx) + (ly - cy) * (ly - cy));
+                sum += Mathf.Exp(-(d * d) / (rad * rad));
+            }
+            var f = Mathf.Clamp01((sum - 0.3f) * 1.2f) - 0.4f * Noise(lx * 7f + tile * 7f, ly * 7f);
+            var border = Mathf.Max(Mathf.Abs(lx), Mathf.Abs(ly));
+            return Mathf.Clamp01(f) * Mathf.Clamp01((0.98f - border) * 20f);
+        }
+
+        /// <summary>Smooth value noise, 0..1.</summary>
+        static float Noise(float x, float y) =>
+            Mathf.PerlinNoise(x, y) * 0.65f + Mathf.PerlinNoise(x * 2.3f + 5f, y * 2.3f + 9f) * 0.35f;
+
+        static Texture2D MakeTextureXY(string name, int size, System.Func<float, float, float> alphaAt)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var px = new Color32[size * size];
+            for (var y = 0; y < size; y++)
+            for (var x = 0; x < size; x++)
+            {
+                var a = Mathf.Clamp01(alphaAt((x + 0.5f) / size * 2f - 1f, (y + 0.5f) / size * 2f - 1f));
+                px[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+            }
+            return SaveTexture(name, tex, px);
+        }
+
+        static Material MakeToonMaterial(string name, Texture2D tex, int queue)
+        {
+            var path = $"{MatDir}/{name}.mat";
+            var shader = Shader.Find("FishingVR/ToonWaterParticle");
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            else
+            {
+                mat.shader = shader;
+                mat.shaderKeywords = new string[0];
+            }
+            mat.SetTexture("_BaseMap", tex);
+            mat.SetColor("_BaseColor", Color.white);
+            mat.renderQueue = queue;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         static Texture2D MakeTexture(string name, int size, System.Func<float, float> alphaAtRadius)
         {
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
@@ -185,6 +269,11 @@ namespace FishingVR.EditorTools
                 var a = Mathf.Clamp01(alphaAtRadius(Mathf.Sqrt(dx * dx + dy * dy)));
                 px[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
             }
+            return SaveTexture(name, tex, px);
+        }
+
+        static Texture2D SaveTexture(string name, Texture2D tex, Color32[] px)
+        {
             tex.SetPixels32(px);
             tex.Apply();
             var path = $"{TexDir}/{name}.png";
