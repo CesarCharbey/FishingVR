@@ -276,7 +276,7 @@ MonoBehaviour:
   seatHeight: 0.3
   tiltFollow: 0.25
   keepTeleportWhileSeated: 1
-  mountOnStart: 1
+  mountOnStart: 0
   onMounted:
     m_PersistentCalls:
       m_Calls: []
