@@ -364,6 +364,7 @@ namespace FishingVR.Fish
             UpdatePermissions(tip, lifted);
 
             Line.UpdateFight(head, lifted, tension);
+            LineCutFX(tip, dt);
             Line.SetLineLength(Vector3.Distance(tip, head));
             rod.LineTension = tension;
             rod.LinePullPoint = head;
@@ -410,6 +411,25 @@ namespace FishingVR.Fish
             var p = anchor + axis * atDistance + right * atLateral;
             var d = FishingWater.DepthAt(p);
             return d < minFightDepth && d < FishingWater.DepthAt(head) - 0.01f;
+        }
+
+        float lineFxTimer;
+
+        /// <summary>The line slicing through the water while the fish runs / swims across: spray where it enters.</summary>
+        void LineCutFX(Vector3 tip, float dt)
+        {
+            if (!FX.WaterFX.Exists || (phase != FightPhase.Run && phase != FightPhase.Struggle)) return;
+            var water = FishingWater.HeightAt(head);
+            if (tip.y <= water || head.y >= water) return;
+            var speed = Mathf.Abs(lateralVelocity) + (phase == FightPhase.Run ? B.runSpeed : 0f);
+            if (speed < 1f) return;
+            lineFxTimer -= dt;
+            if (lineFxTimer > 0f) return;
+            lineFxTimer = Mathf.Lerp(0.2f, 0.07f, Mathf.InverseLerp(1f, 4f, speed));
+            var entry = Vector3.Lerp(tip, head, (tip.y - water) / (tip.y - head.y));
+            var side = phase == FightPhase.Run ? axis : right * Mathf.Sign(lateralVelocity);
+            FX.WaterFX.Ripple(entry, 0.12f, 0.5f);
+            FX.WaterFX.Spray(entry, side * speed * 0.3f + Vector3.up * 0.9f, Mathf.RoundToInt(Mathf.Lerp(1f, 3f, speed / 4f)), 0.4f, 0.6f);
         }
 
         void UpdateCycleBudget() =>

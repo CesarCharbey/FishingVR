@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5416279062287184618}
   - component: {fileID: 1572568109277170837}
   - component: {fileID: 741001870038738631}
+  - component: {fileID: 2541039789701191492}
   m_Layer: 7
   m_Name: Flotteur
   m_TagString: Untagged
@@ -101,6 +102,20 @@ MonoBehaviour:
   waterDrag: 4
   waterAngularDrag: 4
   floatOffset: 0.01
+--- !u!114 &2541039789701191492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5371524949910475967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8727bc15f5ff51141bb378d2a91167a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.FX.BobberWaterFX
+  idleRippleInterval: {x: 2.5, y: 5}
+  wakeSpeed: 0.25
 --- !u!1001 &632741435914736639
 PrefabInstance:
   m_ObjectHideFlags: 0

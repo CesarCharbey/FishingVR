@@ -124,6 +124,7 @@ namespace FishingVR.Fish
             var root = new GameObject($"Fish_{species.displayName}");
             var fb = root.AddComponent<FishBody>();
             fb.Fish = fish;
+            root.AddComponent<FX.FishWaterFX>();
 
             // Model: nose (+Z in its prefab) turned to -Z so the mouth is at the origin and the body extends along +Z.
             var model = Instantiate(species.modelPrefab, root.transform, false);
@@ -262,6 +263,9 @@ namespace FishingVR.Fish
 
         /// <summary>Tail beat intensity hint (0..1), e.g. 1 while struggling.</summary>
         public void SetEffort(float effort) => effortOverride = Mathf.Clamp01(effort);
+
+        /// <summary>How hard the fish fights / struggles right now (0..1), set by the fight.</summary>
+        public float Effort => effortOverride;
 
         /// <summary>Swim away from <paramref name="awayFrom"/> and fade out (missed bite, line broken, unhooked).</summary>
         public void Flee(Vector3 awayFrom)

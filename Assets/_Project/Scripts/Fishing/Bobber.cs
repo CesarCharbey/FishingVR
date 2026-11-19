@@ -77,7 +77,11 @@ namespace FishingVR.Fishing
         {
             extraSink = depth;
             extraSinkTimer = duration;
+            Dipped?.Invoke(depth, duration);
         }
+
+        /// <summary>A fish pulled the bobber down (depth m, duration s): nibble or bite (effects, sounds).</summary>
+        public event System.Action<float, float> Dipped;
 
         /// <summary>Pull the bobber under water (bite) for a duration.</summary>
         public void Sink(float depth, float duration) => Dip(depth, duration);
