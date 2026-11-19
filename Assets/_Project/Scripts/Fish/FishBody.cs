@@ -37,6 +37,11 @@ namespace FishingVR.Fish
         [SerializeField] float maxPitch = 30f;
         [Tooltip("How fast the body follows the heading under water (1/s).")]
         [SerializeField] float bodyFollow = 12f;
+        [Header("Stay in the water")]
+        [Tooltip("The head keeps at least this height above the lake bed (m).")]
+        [SerializeField] float bedClearance = 0.15f;
+        [Tooltip("While swimming freely, the fish does not go where the water is shallower than this (m).")]
+        [SerializeField] float minSwimDepth = 0.3f;
         [Header("Out of water")]
         [Tooltip("Damping of the hanging swing (1/s): the fish settles under the hook instead of swinging forever.")]
         [SerializeField] float airDrag = 2.5f;
@@ -216,12 +221,43 @@ namespace FishingVR.Fish
             swimVelocity = dir * newSpeed;
 
             var next = head + swimVelocity * dt;
-            next.y = Mathf.Min(next.y, FishingWater.HeightAt(next) - 0.08f);
+            if (!CanSwimTo(next))
+            {
+                // Shore / shallows ahead: slide along it (try turning a bit more each side), or stop.
+                var found = false;
+                foreach (var angle in AvoidAngles)
+                {
+                    var side = Quaternion.Euler(0f, angle, 0f) * swimVelocity;
+                    if (!CanSwimTo(head + side * dt)) continue;
+                    swimVelocity = Vector3.RotateTowards(swimVelocity, side, turnRateDeg * 2f * Mathf.Deg2Rad * dt, 0f);
+                    next = head + side * dt;
+                    found = true;
+                    break;
+                }
+                if (!found)
+                {
+                    swimVelocity *= 0.5f;
+                    next = new Vector3(head.x, next.y, head.z);
+                }
+            }
+            next.y = FishingWater.ClampUnderwater(next, next.y, bedClearance, 0.08f);
             head = next;
             facingRequest = swimVelocity.sqrMagnitude > 0.01f ? swimVelocity : HeadingVector();
         }
 
         /// <summary>Current heading (mouth direction).</summary>
+        static readonly float[] AvoidAngles = { 30f, -30f, 60f, -60f, 90f, -90f, 135f, -135f };
+
+        /// <summary>
+        /// Free swimming may not enter water shallower than <see cref="minSwimDepth"/>, unless it is getting
+        /// deeper (a fish already in the shallows can always swim out).
+        /// </summary>
+        bool CanSwimTo(Vector3 next)
+        {
+            var depth = FishingWater.DepthAt(next);
+            return depth >= minSwimDepth || depth >= FishingWater.DepthAt(head) - 1e-3f;
+        }
+
         public Vector3 HeadingVector() => Quaternion.Euler(-pitch, yaw, 0f) * Vector3.forward;
 
         /// <summary>Tail beat intensity hint (0..1), e.g. 1 while struggling.</summary>
@@ -236,7 +272,17 @@ namespace FishingVR.Fish
             mode = Mode.Fleeing;
             var away = Vector3.ProjectOnPlane(head - awayFrom, Vector3.up);
             if (away.sqrMagnitude < 1e-4f) away = -transform.forward;
-            fleeTarget = head + away.normalized * 12f + Vector3.down * 3f;
+            away = away.normalized;
+            // Flees toward open water: the direction (around 'away') with the longest swim before the shallows.
+            var best = away;
+            var bestScore = float.NegativeInfinity;
+            for (var angle = -120f; angle <= 120f; angle += 20f)
+            {
+                var dir = Quaternion.Euler(0f, angle, 0f) * away;
+                var score = FishingWater.SwimmableDistance(head, dir, 12f, minSwimDepth + 0.2f, 1f) - Mathf.Abs(angle) * 0.01f;
+                if (score > bestScore) { bestScore = score; best = dir; }
+            }
+            fleeTarget = head + best * 12f + Vector3.down * 3f;
             fleeTimer = 0f;
             if (head.y > FishingWater.HeightAt(head)) head.y = FishingWater.HeightAt(head) - 0.1f; // drops back in
         }
@@ -366,6 +412,15 @@ namespace FishingVR.Fish
             var dir = com - head;
             if (dir.sqrMagnitude < 1e-6f) dir = transform.forward;
             com = head + dir.normalized * half;
+            // The body lies on the lake bed / the beach instead of sinking into it.
+            var ground = FishingWater.BedHeight(com);
+            if (!float.IsNegativeInfinity(ground) && com.y < ground + 0.03f)
+            {
+                com.y = ground + 0.03f;
+                dir = com - head;
+                if (dir.sqrMagnitude < 1e-6f) dir = transform.forward;
+                com = head + dir.normalized * half;
+            }
             bodyOffset = com - head;
             if (!swimming)
             {

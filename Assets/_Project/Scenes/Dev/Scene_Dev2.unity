@@ -773,7 +773,7 @@ MonoBehaviour:
   reelAllowanceTurns: 0.5
   slackTimeout: 5
   exhaustedMaxDuration: 12
-  staminaRecoverRatio: 0.75
+  staminaRecoverRatio: 1
   fullCounterSide: 0.35
   goodCounter: 0.3
   raisedRodStart: 30
