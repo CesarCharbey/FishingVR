@@ -31,6 +31,13 @@ namespace FishingVR.Fish
     /// Before the fight: picks a species (by rarity weight), makes a visible fish rise from the depths,
     /// swim to the hook, circle around it, nibble (bobber dips) and bite (bobber pulled under).
     /// Hook set during the bite -> <see cref="FishFight"/>. Too early, too late or bait pulled out -> it flees.
+    ///
+    /// Fishing spots (when the scene has a <see cref="FishingSpotManager"/> or any <see cref="FishingSpot"/>):
+    /// the wait before a fish comes depends on the spot influence at the hook (short in a spot, long outside),
+    /// and so do the species (rare ones favoured in a spot, very rare outside) and the size (big fish more
+    /// common in a spot, very rare outside). The spot loses stock on each catch and each escape.
+    /// Without any spot in the scene (dev scenes), everything works as before: a fish comes after its
+    /// approach delay, with the plain rarity weights and sizes.
     /// </summary>
     [RequireComponent(typeof(FishFight))]
     public class FishBiteAI : MonoBehaviour
@@ -48,6 +55,21 @@ namespace FishingVR.Fish
         [SerializeField] float minBiteDepth = 0.4f;
         [Tooltip("Fish only swim (approach, circle) where the water is at least this deep (m).")]
         [SerializeField] float minSwimDepth = 0.35f;
+
+        [Header("Fishing spots (only when the scene has some)")]
+        [Tooltip("Seconds before a fish comes once the bait has settled, outside any fishing spot (random in this range).")]
+        [MinMax] [SerializeField] Vector2 waitOutsideSpot = new Vector2(20f, 40f);
+        [Tooltip("Seconds before a fish comes with the hook in the inner circle of a full spot (random in this range). " +
+                 "In between (spot edge, weakened spot), the wait is blended.")]
+        [MinMax] [SerializeField] Vector2 waitInSpot = new Vector2(5f, 10f);
+        [Tooltip("Spawn weight multiplier per rarity OUTSIDE the spots: Common, Uncommon, Rare, Epic, Legendary.")]
+        [SerializeField] float[] rarityOutsideSpot = { 1f, 0.6f, 0.25f, 0.08f, 0.02f };
+        [Tooltip("Spawn weight multiplier per rarity IN a full spot: Common, Uncommon, Rare, Epic, Legendary.")]
+        [SerializeField] float[] rarityInSpot = { 1f, 1.5f, 2.5f, 4f, 6f };
+        [Tooltip("Size bias multiplier outside the spots (species' Size Rarity Bias times this): above 1, big fish get rarer.")]
+        [SerializeField, Min(0.05f)] float sizeBiasOutsideSpot = 1.75f;
+        [Tooltip("Size bias multiplier in a full spot: below 1, big fish get more common.")]
+        [SerializeField, Min(0.05f)] float sizeBiasInSpot = 0.5f;
 
         [Header("Events")]
         public UnityEvent<FishInstance> onNibble;
@@ -91,6 +113,20 @@ namespace FishingVR.Fish
         bool tooShallowLogged;
         float bobberOutTimer;
 
+        // Fishing spots: wait before the next fish, and the spot the current fish comes from.
+        float waitProgress;   // 0 to 1
+        float waitRoll = -1f; // where in the wait ranges this bait sits (drawn when it settles)
+        FishingSpot currentSpot;
+
+        /// <summary>True when the scene uses fishing spots (manager or spots present).</summary>
+        public static bool SpotsInUse => FishingSpotManager.Instance != null || FishingSpot.All.Count > 0;
+
+        /// <summary>Spot the current fish comes from (null outside the spots).</summary>
+        public FishingSpot CurrentSpot => currentSpot;
+
+        /// <summary>Wait progress toward the next fish (0-1), with spots in use.</summary>
+        public float WaitProgress => waitProgress;
+
         void Awake() => fight = GetComponent<FishFight>();
 
         void OnEnable()
@@ -118,12 +154,44 @@ namespace FishingVR.Fish
             switch (state)
             {
                 case FishBiteState.Idle:
-                    if (baitInWater && line.Bobber.IsSettled && !DeepEnough(line))
-                        break;
-                    if (baitInWater && line.Bobber.IsSettled && PickFish())
+                    if (!baitInWater)
                     {
-                        timer = RandomRange(current.Behaviour.approachDelay);
-                        SetState(FishBiteState.Waiting);
+                        // Bait out of the water: the next cast starts a new wait.
+                        waitProgress = 0f;
+                        waitRoll = -1f;
+                        break;
+                    }
+                    if (!line.Bobber.IsSettled || !DeepEnough(line))
+                        break;
+
+                    if (!SpotsInUse)
+                    {
+                        // No fishing spots in this scene: a fish comes after its approach delay, as always.
+                        if (PickFish(0f, false))
+                        {
+                            timer = RandomRange(current.Behaviour.approachDelay);
+                            SetState(FishBiteState.Waiting);
+                        }
+                        break;
+                    }
+
+                    {
+                        // Fishing spots: the wait depends on the spot influence at the hook, re-evaluated every
+                        // frame (casting into a spot, or a spot leaving, changes it at once).
+                        if (waitRoll < 0f) waitRoll = Random.value;
+                        var influence = FishingSpot.InfluenceAt(HookPos, out var spot);
+                        waitProgress += dt / SpotWait(influence, waitRoll, waitOutsideSpot, waitInSpot);
+                        if (waitProgress < 1f)
+                            break;
+
+                        waitProgress = 0f;
+                        waitRoll = -1f;
+                        if (PickFish(influence, true))
+                        {
+                            currentSpot = influence > 0.01f ? spot : null;
+                            timer = 0.2f; // the wait already happened: the fish comes now
+                            SetState(FishBiteState.Waiting);
+                        }
                     }
                     break;
 
@@ -317,7 +385,21 @@ namespace FishingVR.Fish
         void OnFightFinished(FightResult result)
         {
             timer = escapeCooldown;
+            // Caught = the school loses a fish; line broken / unhooked = an escape (it costs less).
+            ReportToSpot(result == FightResult.Caught);
             SetState(result == FightResult.Caught ? FishBiteState.Caught : FishBiteState.Escaped);
+        }
+
+        /// <summary>Tells the spot the current fish came from how it ended (catch or escape).</summary>
+        void ReportToSpot(bool caught)
+        {
+            if (currentSpot != null)
+            {
+                if (caught) currentSpot.RegisterCatch();
+                else currentSpot.RegisterEscape();
+                if (debugLogs) Debug.Log($"[Fish] {currentSpot.name}: {(caught ? "catch" : "escape")}, stock {currentSpot.Stock:0.00}");
+            }
+            currentSpot = null;
         }
 
         void Flee(string reason)
@@ -326,25 +408,60 @@ namespace FishingVR.Fish
             Line.Bobber.ClearSink();
             if (body != null) body.Flee(rod.RodTip.position);
             body = null;
+            ReportToSpot(false);
             onEscaped?.Invoke(current);
             timer = escapeCooldown;
             SetState(FishBiteState.Escaped);
         }
 
-        bool PickFish()
+        /// <summary>
+        /// Picks the species by rarity weight and rolls its size. With spots in use, both depend on the spot
+        /// influence at the hook (0 = outside any spot, 1 = inner circle of a full spot).
+        /// </summary>
+        bool PickFish(float influence, bool spotsInUse)
         {
             var total = 0f;
-            foreach (var s in species) if (IsValid(s)) total += s.SpawnWeight;
+            foreach (var s in species) if (IsValid(s)) total += Weight(s);
             if (total <= 0f) return false;
 
+            var sizeBias = spotsInUse ? Mathf.Lerp(sizeBiasOutsideSpot, sizeBiasInSpot, influence) : 1f;
             var pick = Random.value * total;
             foreach (var s in species)
             {
                 if (!IsValid(s)) continue;
-                pick -= s.SpawnWeight;
-                if (pick <= 0f) { current = s.Roll(); return true; }
+                pick -= Weight(s);
+                if (pick <= 0f)
+                {
+                    current = s.Roll(sizeBias);
+                    if (debugLogs && spotsInUse)
+                        Debug.Log($"[Fish] {current} picked with spot influence {influence:0.00} (size bias x{sizeBias:0.00})");
+                    return true;
+                }
             }
             return false;
+
+            float Weight(FishSpecies s) =>
+                s.SpawnWeight * (spotsInUse ? SpotRarityMultiplier(s.rarity, influence, rarityOutsideSpot, rarityInSpot) : 1f);
+        }
+
+        /// <summary>
+        /// Seconds before a fish comes: the outside range blended toward the in-spot range by the influence.
+        /// roll01 places the bait in both ranges (same roll, so the blend stays monotonic). Public for tests.
+        /// </summary>
+        public static float SpotWait(float influence, float roll01, Vector2 outside, Vector2 inside)
+        {
+            var o = Mathf.Lerp(outside.x, outside.y, roll01);
+            var i = Mathf.Lerp(inside.x, inside.y, roll01);
+            return Mathf.Max(0.1f, Mathf.Lerp(o, i, Mathf.Clamp01(influence)));
+        }
+
+        /// <summary>Spawn weight multiplier of a rarity at this spot influence (outside -> in spot). Public for tests.</summary>
+        public static float SpotRarityMultiplier(FishRarity rarity, float influence, float[] outside, float[] inside)
+        {
+            var index = (int)rarity;
+            var o = outside != null && index < outside.Length ? outside[index] : 1f;
+            var i = inside != null && index < inside.Length ? inside[index] : 1f;
+            return Mathf.Max(0f, Mathf.Lerp(o, i, Mathf.Clamp01(influence)));
         }
 
         static bool IsValid(FishSpecies s) => s != null && s.behaviour != null && s.modelPrefab != null;

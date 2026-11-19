@@ -22,8 +22,8 @@ namespace FishingVR.Fish
         public GameObject modelPrefab;
 
         [Header("Size")]
-        public Vector2 lengthCmRange = new Vector2(20f, 40f);
-        public Vector2 weightKgRange = new Vector2(0.2f, 1f);
+        [MinMax] public Vector2 lengthCmRange = new Vector2(20f, 40f);
+        [MinMax] public Vector2 weightKgRange = new Vector2(0.2f, 1f);
         [Tooltip("1 = uniform sizes, higher = big fish are rarer.")]
         [Range(1f, 4f)] public float sizeRarityBias = 2f;
 
@@ -37,9 +37,16 @@ namespace FishingVR.Fish
         public float SpawnWeight => spawnWeightOverride > 0f ? spawnWeightOverride : rarity.DefaultSpawnWeight();
 
         /// <summary>Roll a fish of this species (length and weight are correlated).</summary>
-        public FishInstance Roll()
+        public FishInstance Roll() => Roll(1f);
+
+        /// <summary>
+        /// Rolls a fish with the size bias scaled: &gt; 1 makes big fish rarer (outside the fishing spots),
+        /// &lt; 1 makes them more common (in a spot). The weight still follows the size, as in <see cref="Roll()"/>.
+        /// </summary>
+        public FishInstance Roll(float sizeBiasScale)
         {
-            var t = Mathf.Pow(Random.value, sizeRarityBias);
+            var bias = Mathf.Clamp(sizeRarityBias * Mathf.Max(0.05f, sizeBiasScale), 0.3f, 8f);
+            var t = Mathf.Pow(Random.value, bias);
             var length = Mathf.Lerp(lengthCmRange.x, lengthCmRange.y, t);
             var weightT = Mathf.Clamp01(t + Random.Range(-0.08f, 0.08f));
             var weight = Mathf.Lerp(weightKgRange.x, weightKgRange.y, weightT);

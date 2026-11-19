@@ -298043,6 +298043,22 @@ MonoBehaviour:
   debugLogs: 1
   minBiteDepth: 0.4
   minSwimDepth: 0.35
+  waitOutsideSpot: {x: 20, y: 40}
+  waitInSpot: {x: 5, y: 10}
+  rarityOutsideSpot:
+  - 1
+  - 0.6
+  - 0.25
+  - 0.08
+  - 0.02
+  rarityInSpot:
+  - 1
+  - 1.5
+  - 2.5
+  - 4
+  - 6
+  sizeBiasOutsideSpot: 1.75
+  sizeBiasInSpot: 0.5
   onNibble:
     m_PersistentCalls:
       m_Calls: []
@@ -324674,6 +324690,74 @@ CapsuleCollider:
   m_Height: 2.8143094
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &859308511
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 859308513}
+  - component: {fileID: 859308512}
+  m_Layer: 0
+  m_Name: FishingSpotManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &859308512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859308511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54c31112a84267b4bab665f40d6c9bc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fishing.FishingSpotManager
+  spotPrefab: {fileID: 7207029081198962045, guid: 9b70f08cf9cc05c408b03680afa7f323, type: 3}
+  minSpots: 3
+  maxSpots: 6
+  countWeights:
+  - 3
+  - 5
+  - 2.5
+  - 0.8
+  recountInterval: {x: 180, y: 360}
+  spawnDelay: {x: 15, y: 45}
+  startWithSpots: 1
+  areaSize: {x: 260, y: 660}
+  minDepth: 2
+  minSpacing: 12
+  avoid:
+  - {fileID: 1534615587}
+  avoidRadius: 15
+  minPlayerDistance: 20
+  placementAttempts: 80
+  radius: {x: 4, y: 12}
+  activeMinutes: {x: 8, y: 16}
+  catchDepletion: {x: 0.15, y: 0.3}
+  escapeToCatchRatio: 0.5
+  logSpawns: 1
+--- !u!4 &859308513
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859308511}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 32, y: 0, z: 128}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &859389442
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -818577,3 +818661,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 1966308508}
   - {fileID: 1212334727}
+  - {fileID: 859308513}
