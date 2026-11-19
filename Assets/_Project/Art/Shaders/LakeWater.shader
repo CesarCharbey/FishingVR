@@ -1,16 +1,16 @@
-// Calm lake surface for URP (VR single-pass instanced ready).
+// Stylized lake surface for URP (cartoon / low-poly look, VR single-pass instanced ready).
 //
 // Purely visual: the physics keeps using FlatWaterSurface (flat plane), so the surface is never displaced,
-// only its normal is perturbed (animated ripple maps + interactive ripples from WaterRipples).
+// only its normal is perturbed (drifting ripple maps + interactive ripples from WaterRipples).
 //
-// What it does, per pixel:
-// 1. Underwater: the scene behind the water (_CameraOpaqueTexture), slightly refracted, fades into the deep
-//    colour with the distance travelled in the water (Beer-Lambert absorption). "Visibility" = distance at
-//    which ~95% of the light is gone: fish shapes are readable near the surface, the bottom of the lake is not.
-// 2. Surface: sky reflection with a Fresnel term (reflective at grazing angles, transparent when looking
-//    down) and the sun's specular highlight, shadowed by the boat.
-// 3. Foam: soft shore/contact foam (where the water is shallow: banks, dock posts, hull) and the wake foam
-//    written by the interactive ripples.
+// Look, per pixel:
+// 1. Colour gradient with the depth of the water: light turquoise over the shallows, darker lake blue-green
+//    further out (optionally in flat bands). The bottom and the fish stay visible through the water, wobbling
+//    with the ripples, and fade out with the distance travelled in the water ("Visibility").
+// 2. A net of wavy light lines drifting on the surface (stylized caustics), distorted by the ripples.
+// 3. Crisp white foam: lace along the shore, a solid jagged ring around everything poking out of the water
+//    (rocks, dock posts, hull), and the rings / wake drawn by the interactive ripples.
+// 4. A light tint towards the horizon (stylized Fresnel) instead of a realistic mirror reflection.
 //
 // Requirements: URP asset with Depth Texture and Opaque Texture enabled. The material must stay in the
 // Transparent queue: the boat's WaterMask (queue Transparent-1) hides the water inside the hull.
@@ -19,37 +19,56 @@ Shader "FishingVR/LakeWater"
     Properties
     {
         [Header(Water colour)]
-        _ShallowColor ("Shallow Tint", Color) = (0.72, 0.88, 0.80, 1)
-        _DeepColor ("Deep Colour", Color) = (0.035, 0.11, 0.115, 1)
-        _Visibility ("Visibility (m)", Range(0.2, 10)) = 2
-        _ShoreTintDepth ("Shore Tint Fade Depth (m)", Range(0.01, 2)) = 0.3
+        _ShallowColor ("Shallow Colour", Color) = (0.36, 0.78, 0.70, 1)
+        _DeepColor ("Deep Colour", Color) = (0.05, 0.30, 0.40, 1)
+        _ColorDepth ("Depth of the Deep Colour (m)", Range(0.2, 15)) = 3.5
+        _ColorBands ("Colour Bands (0 = smooth)", Range(0, 8)) = 0
+        _Visibility ("Visibility (m)", Range(0.2, 10)) = 1.8
+        _ShallowOpacity ("Shallow Opacity", Range(0, 1)) = 0.25
 
-        [Header(Surface ripples)]
+        [Header(Horizon tint)]
+        _HorizonColor ("Horizon Colour", Color) = (0.55, 0.82, 0.86, 1)
+        _HorizonStrength ("Horizon Strength", Range(0, 1)) = 0.55
+        _HorizonPower ("Horizon Falloff", Range(1, 10)) = 4
+        _SkyReflection ("Sky Colour In Horizon", Range(0, 1)) = 0.3
+
+        [Header(Ripples and distortion)]
         [NoScaleOffset][Normal] _NormalMap ("Ripple Normal Map", 2D) = "bump" {}
         _RippleTileA ("Large Ripples Tile Size (m)", Float) = 7
         _RippleTileB ("Small Ripples Tile Size (m)", Float) = 2.3
-        _RippleStrength ("Ripple Strength", Range(0, 1)) = 0.3
-        _WindSpeed ("Ripple Drift Speed (m/s)", Range(0, 1)) = 0.12
+        _RippleStrength ("Ripple Strength", Range(0, 1)) = 0.35
+        _WindSpeed ("Drift Speed (m/s)", Range(0, 1)) = 0.12
         _WindDirection ("Wind Direction (degrees)", Range(0, 360)) = 35
-        _RippleFadeDistance ("Ripple Fade Distance (m)", Float) = 120
+        _Refraction ("Underwater Wobble", Range(0, 0.1)) = 0.035
 
-        [Header(Reflection and refraction)]
-        _Smoothness ("Smoothness", Range(0.5, 1)) = 0.93
-        _ReflectionStrength ("Sky Reflection", Range(0, 1)) = 0.9
-        _SpecularStrength ("Sun Highlight", Range(0, 4)) = 1.2
-        _Refraction ("Refraction Distortion", Range(0, 0.1)) = 0.025
+        [Header(Light lines)]
+        [NoScaleOffset] _PatternTex ("Line Pattern", 2D) = "black" {}
+        _PatternColor ("Line Colour (alpha = strength)", Color) = (0.85, 1, 0.98, 0.3)
+        _PatternTileSize ("Line Pattern Tile Size (m)", Float) = 3.5
+        _PatternCutoff ("Line Thickness", Range(0.05, 0.95)) = 0.5
+        _PatternWarp ("Line Wobble", Range(0, 2)) = 0.6
+        _PatternDeepFade ("Lines Kept Over Deep Water", Range(0, 1)) = 0.45
+        _PatternFadeDistance ("Lines Fade Distance (m)", Float) = 60
 
         [Header(Foam)]
         [NoScaleOffset] _FoamTex ("Foam Noise", 2D) = "white" {}
-        _FoamColor ("Foam Colour", Color) = (0.92, 0.95, 0.95, 1)
-        _FoamTileSize ("Foam Tile Size (m)", Float) = 1.6
-        _ShoreFoamDepth ("Shore Foam Depth (m)", Range(0, 1)) = 0.12
-        _ShoreFoamStrength ("Shore Foam Strength", Range(0, 1)) = 0.55
+        _FoamColor ("Foam Colour", Color) = (0.96, 0.99, 0.98, 1)
+        _FoamTileSize ("Foam Tile Size (m)", Float) = 1.4
+        _ShoreFoamDepth ("Shore Foam Depth (m)", Range(0, 2)) = 0.45
+        _ShoreFoamDensity ("Shore Foam Density", Range(0, 1)) = 0.55
+        _RingFoamDepth ("Contact Ring Depth (m)", Range(0, 0.5)) = 0.07
+
+        [Header(Lighting)]
+        _LightInfluence ("Sun and Sky Influence", Range(0, 1)) = 0.5
+        _ShadowStrength ("Shadow Strength", Range(0, 1)) = 0.35
+        _GlintStrength ("Sun Glints", Range(0, 2)) = 0.6
+        _GlintSize ("Sun Glints Size", Range(0.9, 0.999)) = 0.985
 
         [Header(Interactive ripples from WaterRipples)]
         _InteractiveStrength ("Interactive Ripple Strength", Range(0, 4)) = 1
-        _WakeFoamStrength ("Wake Foam Strength", Range(0, 2)) = 1
-        _CrestFoam ("Ripple Crest Foam", Range(0, 2)) = 0.6
+        _WakeFoamStrength ("Wake Foam Strength", Range(0, 4)) = 1.5
+        _CrestFoam ("Ripple Crest Foam", Range(0, 4)) = 1.2
+        _RippleFoamCutoff ("Ripple Foam Threshold", Range(0.02, 1)) = 0.25
     }
 
     SubShader
@@ -88,8 +107,9 @@ Shader "FishingVR/LakeWater"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 
-            TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
-            TEXTURE2D(_FoamTex);   SAMPLER(sampler_FoamTex);
+            TEXTURE2D(_NormalMap);  SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_FoamTex);    SAMPLER(sampler_FoamTex);
+            TEXTURE2D(_PatternTex); SAMPLER(sampler_PatternTex);
 
             // Set globally by WaterRipples (FishingVR.Water). _WaterRippleArea.w = 0 when there is no simulation.
             TEXTURE2D(_WaterRippleTex); SAMPLER(sampler_WaterRippleTex);
@@ -99,25 +119,39 @@ Shader "FishingVR/LakeWater"
             CBUFFER_START(UnityPerMaterial)
                 half4 _ShallowColor;
                 half4 _DeepColor;
+                float _ColorDepth;
+                float _ColorBands;
                 float _Visibility;
-                float _ShoreTintDepth;
+                half _ShallowOpacity;
+                half4 _HorizonColor;
+                half _HorizonStrength;
+                half _HorizonPower;
+                half _SkyReflection;
                 float _RippleTileA;
                 float _RippleTileB;
                 half _RippleStrength;
                 float _WindSpeed;
                 float _WindDirection;
-                float _RippleFadeDistance;
-                half _Smoothness;
-                half _ReflectionStrength;
-                half _SpecularStrength;
                 half _Refraction;
+                half4 _PatternColor;
+                float _PatternTileSize;
+                half _PatternCutoff;
+                half _PatternWarp;
+                half _PatternDeepFade;
+                float _PatternFadeDistance;
                 half4 _FoamColor;
                 float _FoamTileSize;
                 float _ShoreFoamDepth;
-                half _ShoreFoamStrength;
+                half _ShoreFoamDensity;
+                float _RingFoamDepth;
+                half _LightInfluence;
+                half _ShadowStrength;
+                half _GlintStrength;
+                half _GlintSize;
                 half _InteractiveStrength;
                 half _WakeFoamStrength;
                 half _CrestFoam;
+                half _RippleFoamCutoff;
             CBUFFER_END
 
             struct Attributes
@@ -147,6 +181,14 @@ Shader "FishingVR/LakeWater"
                 output.positionWS = positions.positionWS;
                 output.fogFactor = ComputeFogFactor(positions.positionCS.z);
                 return output;
+            }
+
+            // Anti-aliased step (x >= edge): a crisp cartoon edge that does not shimmer (about one pixel wide).
+            float AAStep(float edge, float x)
+            {
+                float v = x - edge;
+                float w = max(fwidth(v) * 0.75, 1e-4);
+                return smoothstep(-w, w, v);
             }
 
             // Interactive ripples: height gradient (slope) and wake foam from the simulation texture.
@@ -185,7 +227,7 @@ Shader "FishingVR/LakeWater"
                 float3 V = toCamera / max(viewDistance, 1e-4);
                 float2 xz = positionWS.xz;
 
-                // ---- Normal: two drifting ripple layers + interactive ripples -----------------------------
+                // ---- Ripples: two drifting normal layers + interactive ripples -----------------------------
                 float windAngle = radians(_WindDirection);
                 float2 wind = float2(cos(windAngle), sin(windAngle));
                 float2 crossWind = float2(-wind.y, wind.x);
@@ -195,10 +237,7 @@ Shader "FishingVR/LakeWater"
                 float2 uvB = (xz + (wind * 0.6 + crossWind * 0.8) * t * 1.7) / _RippleTileB;
                 half3 nA = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uvA));
                 half3 nB = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uvB));
-
-                // Fade the static ripples with distance (less shimmer / tiling far away).
-                half distanceFade = lerp(0.35, 1.0, saturate(1.0 - viewDistance / _RippleFadeDistance));
-                float2 slope = -(nA.xy + nB.xy) * _RippleStrength * distanceFade; // tangent XY = world XZ
+                float2 slope = -(nA.xy + nB.xy) * _RippleStrength; // tangent XY = world XZ
 
                 float2 rippleSlope;
                 float wakeFoam;
@@ -207,76 +246,89 @@ Shader "FishingVR/LakeWater"
 
                 float3 N = normalize(float3(-slope.x, 1.0, -slope.y));
 
-                // ---- Depth behind the water --------------------------------------------------------------
+                // ---- What lies under the surface -----------------------------------------------------------
                 float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 float surfaceEyeDepth = LinearEyeDepth(input.positionCS.z, _ZBufferParams);
 
-                // Refraction: offset the lookup with the surface slope. Weaker far away.
+                // Wobble of the underwater view, weaker far away.
                 float2 refractUV = screenUV + slope * (_Refraction / max(1.0, surfaceEyeDepth * 0.25));
                 float sceneEyeDepth = LinearEyeDepth(SampleSceneDepth(refractUV), _ZBufferParams);
                 if (sceneEyeDepth < surfaceEyeDepth)
                 {
-                    // The offset picked something in front of the water (a dock post, the hull...): don't refract.
+                    // The offset picked something in front of the water (a dock post, the hull...): don't wobble.
                     refractUV = screenUV;
                     sceneEyeDepth = LinearEyeDepth(SampleSceneDepth(screenUV), _ZBufferParams);
                 }
                 half3 sceneColor = SampleSceneColor(refractUV);
 
-                // Point of the scene seen through the water, on the same view ray.
-                float3 scenePositionWS = _WorldSpaceCameraPos - toCamera * (sceneEyeDepth / surfaceEyeDepth);
+                // Point of the scene seen through the water, on the same view ray. Depth for the foam and the
+                // colour uses the unwobbled lookup, so their edges hug the shapes exactly.
+                float straightEyeDepth = LinearEyeDepth(SampleSceneDepth(screenUV), _ZBufferParams);
+                float3 straightScene = _WorldSpaceCameraPos - toCamera * (straightEyeDepth / surfaceEyeDepth);
+                float waterDepth = max(0.0, positionWS.y - straightScene.y);          // vertical depth
                 float waterPath = max(0.0, sceneEyeDepth - surfaceEyeDepth) * (viewDistance / surfaceEyeDepth);
-                float waterDepth = max(0.0, positionWS.y - scenePositionWS.y); // Vertical depth to the bottom / object.
+                half edgeSoftness = saturate(waterDepth / 0.03); // no hard line where the water meets the bank
 
-                // Fade every surface effect out at the very edge, so the shoreline has no hard line.
-                half edgeSoftness = saturate(waterDepth / 0.04);
-
-                // ---- Lighting ------------------------------------------------------------------------------
+                // ---- Lighting (kept light: the palette does most of the work) ------------------------------
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(positionWS));
-                half shadow = mainLight.shadowAttenuation;
+                half shadow = lerp(1.0 - _ShadowStrength, 1.0, mainLight.shadowAttenuation);
                 half3 ambient = SampleSH(half3(0, 1, 0));
-                half sunHeight = saturate(mainLight.direction.y);
-                half3 volumeLight = ambient + mainLight.color * sunHeight * lerp(0.45, 1.0, shadow);
+                half3 sunAndSky = ambient + mainLight.color * saturate(mainLight.direction.y);
+                half3 light = lerp(half3(1, 1, 1), sunAndSky, _LightInfluence) * shadow;
 
-                // ---- Underwater colour (absorption) --------------------------------------------------------
-                half transmittance = exp(-3.0 * waterPath / max(_Visibility, 0.01));
-                half3 shoreTint = lerp(half3(1, 1, 1), _ShallowColor.rgb, saturate(waterDepth / _ShoreTintDepth));
-                half3 deepColor = _DeepColor.rgb * volumeLight;
-                float3 color = lerp(deepColor, sceneColor * shoreTint, transmittance);
+                // ---- Water colour: gradient with depth ------------------------------------------------------
+                float depth01 = saturate(waterDepth / _ColorDepth);
+                depth01 = 1.0 - (1.0 - depth01) * (1.0 - depth01); // ease out: the shallows change colour fast
+                if (_ColorBands >= 1.0)
+                    depth01 = saturate(floor(depth01 * _ColorBands + 0.5) / _ColorBands);
+                half3 waterColor = lerp(_ShallowColor.rgb, _DeepColor.rgb, depth01) * light;
 
-                // ---- Reflection (Fresnel) and sun highlight --------------------------------------------------
+                // See-through: the bottom and the fish fade out with the distance travelled in the water.
+                half opacity = 1.0 - exp(-3.0 * waterPath / max(_Visibility, 0.01));
+                opacity = lerp(_ShallowOpacity, 1.0, opacity) * edgeSoftness;
+                float3 color = lerp(sceneColor * lerp(half3(1, 1, 1), _ShallowColor.rgb, 0.35 * edgeSoftness), waterColor, opacity);
+
+                // ---- Horizon tint (stylized Fresnel) --------------------------------------------------------
                 half NdotV = saturate(dot(N, V));
-                half fresnel = 0.02 + 0.98 * pow(1.0 - NdotV, 5.0);
-                fresnel *= _ReflectionStrength * edgeSoftness;
+                half horizon = pow(1.0 - NdotV, _HorizonPower) * _HorizonStrength * edgeSoftness;
+                half3 sky = GlossyEnvironmentReflection(reflect(-V, N), 0.6, 1.0);
+                half3 horizonColor = lerp(_HorizonColor.rgb * light, sky, _SkyReflection);
+                color = lerp(color, horizonColor, horizon);
 
-                half perceptualRoughness = 1.0 - _Smoothness;
-                half3 reflection = GlossyEnvironmentReflection(reflect(-V, N), perceptualRoughness, 1.0);
-                color = lerp(color, reflection, fresnel);
+                // ---- Light lines (stylized caustics) --------------------------------------------------------
+                float2 patternUV = xz / _PatternTileSize + slope * _PatternWarp;
+                half lineA = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patternUV + wind * t * 0.35).r;
+                half lineB = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patternUV * 0.71 + crossWind * t * 0.25 + 0.37).r;
+                half lines = max(lineA, lineB * 0.85);
+                half lineMask = AAStep(1.0 - _PatternCutoff, lines);
+                lineMask *= lerp(1.0, _PatternDeepFade, depth01);
+                lineMask *= saturate(1.0 - viewDistance / _PatternFadeDistance) * edgeSoftness;
+                color = lerp(color, _PatternColor.rgb * light, lineMask * _PatternColor.a);
 
+                // ---- Sun glints (small crisp sparkles) ------------------------------------------------------
                 float3 H = normalize(mainLight.direction + V);
-                float NdotH = saturate(dot(N, H));
-                float roughness = max(perceptualRoughness * perceptualRoughness, 0.003);
-                float a2 = roughness * roughness;
-                float d = NdotH * NdotH * (a2 - 1.0) + 1.0;
-                float ggx = a2 / (PI * d * d);
-                half specular = min(ggx * 0.25, 60.0) * saturate(dot(N, mainLight.direction)) * _SpecularStrength;
-                color += mainLight.color * specular * shadow * edgeSoftness;
+                half glint = AAStep(_GlintSize, saturate(dot(N, H))) * _GlintStrength * mainLight.shadowAttenuation;
+                color += mainLight.color * glint * edgeSoftness;
 
-                // ---- Foam ----------------------------------------------------------------------------------
+                // ---- Foam (crisp white shapes) --------------------------------------------------------------
                 float2 foamUV = xz / _FoamTileSize;
-                half foamNoise = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUV + wind * t * 0.25).r * 0.6
-                               + SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUV * 0.47 - crossWind * t * 0.15).r * 0.4;
+                half noise = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUV + wind * t * 0.3).r * 0.6
+                           + SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUV * 0.53 - crossWind * t * 0.2).r * 0.4;
+                half lace = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, xz / (_FoamTileSize * 1.3) + slope * 0.3 + wind * t * 0.2).r;
 
-                // Shore / contact foam: strongest where the water is shallowest, broken up by the noise.
+                // Shore lace: solid at the water's edge, breaking into a lacy net further out.
                 half shore = 1.0 - saturate(waterDepth / max(_ShoreFoamDepth, 1e-3));
-                half shoreFoam = saturate((shore * 1.4 - (1.0 - foamNoise)) * 2.5) * _ShoreFoamStrength * edgeSoftness;
+                half shoreFoam = AAStep(1.0 - shore * _ShoreFoamDensity * 1.6, lace * 0.75 + noise * 0.35) * step(0.001, shore);
 
-                // Wake foam (written by the boat / splashes) and foam on steep ripple crests.
-                half wake = saturate(wakeFoam * _WakeFoamStrength + length(rippleSlope) * _CrestFoam);
-                half wakeFoamAmount = saturate((wake * 1.3 - (1.0 - foamNoise)) * 2.0) * wake;
+                // Contact ring: a solid jagged band around everything that pokes out of the water.
+                half ring = AAStep(waterDepth, _RingFoamDepth * (0.55 + 0.9 * noise));
 
-                half foam = saturate(shoreFoam + wakeFoamAmount);
-                half3 foamColor = _FoamColor.rgb * volumeLight;
-                color = lerp(color, foamColor, foam);
+                // Interactive ripples: crisp rings and wake trails.
+                half wake = wakeFoam * _WakeFoamStrength + length(rippleSlope) * _CrestFoam;
+                half wakeFoamMask = AAStep(_RippleFoamCutoff, wake * (0.65 + 0.7 * noise));
+
+                half foam = saturate(max(max(shoreFoam, ring), wakeFoamMask));
+                color = lerp(color, _FoamColor.rgb * light, foam * _FoamColor.a);
 
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0);
