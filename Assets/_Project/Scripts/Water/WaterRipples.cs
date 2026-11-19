@@ -53,6 +53,17 @@ namespace FishingVR.Water
         [Tooltip("Width of the absorbing border, as a fraction of the area, so waves do not bounce off its edge.")]
         [SerializeField, Range(0.02f, 0.3f)] float edgeWidth = 0.12f;
 
+        [Header("Foam on steep waves")]
+        [Tooltip("Wave slope above which the crest breaks into foam (0.03 = 3 cm of rise per metre). " +
+                 "Lower = foam along more of the boat's V wake; too low and every ripple foams.")]
+        [SerializeField, Range(0.005f, 0.3f)] float steepFoamThreshold = 0.03f;
+
+        [Tooltip("Foam added per second on a wave twice as steep as the threshold.")]
+        [SerializeField, Range(0f, 20f)] float steepFoam = 4f;
+
+        [Tooltip("How fast the foam spreads to the neighbouring water (per second). Softens the foam lines.")]
+        [SerializeField, Range(0f, 10f)] float foamSpread = 2f;
+
         static WaterRipples instance;
         static bool quitting;
 
@@ -64,6 +75,10 @@ namespace FishingVR.Water
         static readonly int DampingId = Shader.PropertyToID("_Damping");
         static readonly int FoamDecayId = Shader.PropertyToID("_FoamDecay");
         static readonly int EdgeWidthId = Shader.PropertyToID("_EdgeWidth");
+        static readonly int TexelWorldId = Shader.PropertyToID("_TexelWorld");
+        static readonly int SteepThresholdId = Shader.PropertyToID("_SteepThreshold");
+        static readonly int SteepFoamId = Shader.PropertyToID("_SteepFoam");
+        static readonly int FoamSpreadId = Shader.PropertyToID("_FoamSpread");
         static readonly int SplatCountId = Shader.PropertyToID("_SplatCount");
         static readonly int SplatsId = Shader.PropertyToID("_Splats");
         static readonly int SplatFoamId = Shader.PropertyToID("_SplatFoam");
@@ -280,6 +295,10 @@ namespace FishingVR.Water
                 material.SetFloat(DampingId, Mathf.Pow(0.5f, stepDt / waveHalfLife));
                 material.SetFloat(FoamDecayId, Mathf.Pow(0.5f, stepDt / foamHalfLife));
                 material.SetFloat(EdgeWidthId, edgeWidth);
+                material.SetFloat(TexelWorldId, texel);
+                material.SetFloat(SteepThresholdId, steepFoamThreshold);
+                material.SetFloat(SteepFoamId, steepFoam * stepDt);
+                material.SetFloat(FoamSpreadId, Mathf.Clamp01(foamSpread * stepDt));
 
                 for (int i = 0; i < steps; i++)
                 {

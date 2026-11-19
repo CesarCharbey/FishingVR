@@ -37,8 +37,14 @@ namespace FishingVR.Boat
         [SerializeField, Min(0f)] float propellerFoam = 2.5f;
         [SerializeField, Min(0.05f)] float propellerFoamRadius = 0.3f;
 
-        [Tooltip("Foam per second at the bow, per m/s above the spray speed.")]
-        [SerializeField, Min(0f)] float bowFoam = 0.6f;
+        [Tooltip("Foam per second at each bow shoulder, per m/s above Bow Foam Speed. It seeds the arms of the V wake.")]
+        [SerializeField, Min(0f)] float bowFoam = 0.8f;
+
+        [Tooltip("Forward speed (m/s) above which the bow pushes up white water.")]
+        [SerializeField, Min(0f)] float bowFoamSpeed = 1.5f;
+
+        [Tooltip("Sideways distance (m) of the bow shoulders from the centre line, where the V wake starts.")]
+        [SerializeField, Min(0f)] float bowShoulder = 0.4f;
 
         [Header("Spray")]
         [Tooltip("Material of the droplets (M_Water_Spray). Empty = no spray particles.")]
@@ -100,9 +106,17 @@ namespace FishingVR.Boat
             float forwardSpeed = Vector3.Dot(body.linearVelocity, transform.forward);
             float overSpray = Mathf.Max(0f, forwardSpeed - spraySpeed);
 
-            // Bow foam when fast.
-            if (overSpray > 0f && bowSpeed >= 0f)
-                WaterRipples.AddDisturbance(SurfacePoint(water, transform.TransformPoint(bowPoint)), bowRadius, 0f, bowFoam * overSpray);
+            // White water at the bow shoulders: where the arms of the V start.
+            float overFoam = forwardSpeed - bowFoamSpeed;
+            if (overFoam > 0f && bowSpeed >= 0f)
+            {
+                float foamRate = bowFoam * overFoam;
+                float shoulderRadius = bowRadius * 0.6f;
+                Vector3 shoulder = bowPoint + new Vector3(bowShoulder, 0f, -0.3f);
+                WaterRipples.AddDisturbance(SurfacePoint(water, transform.TransformPoint(shoulder)), shoulderRadius, 0f, foamRate);
+                shoulder.x = -bowShoulder;
+                WaterRipples.AddDisturbance(SurfacePoint(water, transform.TransformPoint(shoulder)), shoulderRadius, 0f, foamRate);
+            }
 
             // Propeller wash: foam trail, stronger with the engine speed.
             if (motor != null && motor.Propeller != null && motor.IsPropellerSubmerged && motor.EngineRpm > 0.05f)
