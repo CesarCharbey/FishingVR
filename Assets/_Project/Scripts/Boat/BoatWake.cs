@@ -36,6 +36,10 @@ namespace FishingVR.Boat
         [Tooltip("Foam per second left by the propeller at full engine speed.")]
         [SerializeField, Min(0f)] float propellerFoam = 2.5f;
         [SerializeField, Min(0.05f)] float propellerFoamRadius = 0.3f;
+        [Tooltip("Churned white water per second at full engine speed: the dense, short-lived foam right behind the propeller (drawn by the lake's Dense Core option).")]
+        [SerializeField, Min(0f)] float propellerChurn = 12f;
+        [Tooltip("Width of the churned white water behind the propeller (radius, m).")]
+        [SerializeField, Min(0.05f)] float propellerChurnRadius = 0.5f;
 
         [Tooltip("Foam per second at each bow shoulder, per m/s above Bow Foam Speed. It seeds the arms of the V wake.")]
         [SerializeField, Min(0f)] float bowFoam = 0.8f;
@@ -123,6 +127,7 @@ namespace FishingVR.Boat
             {
                 Vector3 prop = SurfacePoint(water, motor.Propeller.position);
                 WaterRipples.AddDisturbance(prop, propellerFoamRadius, -0.01f * motor.EngineRpm, propellerFoam * motor.EngineRpm);
+                WaterRipples.AddDisturbance(prop, propellerChurnRadius, 0f, 0f, propellerChurn * motor.EngineRpm);
             }
 
             UpdateSpray(sprayLeft, overSpray);

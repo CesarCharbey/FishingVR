@@ -99,7 +99,13 @@ Material:
     - _SpotRippleTile: 0.8
     - _SpotRipples: 0.7
     - _Visibility: 2.5
+    - _WakeBubbleTint: 0
+    - _WakeCore: 0
+    - _WakeCoreThreshold: 0.12
+    - _WakeFarSmoothing: 0
     - _WakeFoamStrength: 1.5
+    - _WakeLaceStyle: 0
+    - _WakeLaceTile: 1.1
     - _WindDirection: 35
     - _WindSpeed: 0.12
     m_Colors:
@@ -110,5 +116,6 @@ Material:
     - _PatternColor: {r: 0.82, g: 1, b: 1, a: 0.32}
     - _ShallowColor: {r: 0.5, g: 0.88, b: 0.82, a: 1}
     - _SpotColor: {r: 0.03, g: 0.23999995, b: 0.27999997, a: 0.4}
+    - _WakeBubbleColor: {r: 0.6, g: 0.93, b: 0.9, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

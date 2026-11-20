@@ -96,6 +96,15 @@ Shader "FishingVR/LakeWater"
         _CrestFoam ("Ripple Crest Foam", Range(0, 4)) = 1.2
         _RippleFoamCutoff ("Ripple Foam Threshold", Range(0.02, 1)) = 0.25
 
+        [Header(Wake look options being evaluated. 0 is off)]
+        _WakeCore ("1. Dense Core Behind The Propeller", Range(0, 1)) = 0
+        _WakeCoreThreshold ("1. Core From Churned Water Amount (1 at the propeller, fading and spreading behind)", Range(0.02, 1)) = 0.12
+        _WakeLaceStyle ("2. Own Finer Cells, No Light Lines Under", Range(0, 1)) = 0
+        _WakeLaceTile ("2. Wake Cell Size (m)", Float) = 1.1
+        _WakeBubbleTint ("3. Bubble Cloud Tint", Range(0, 1)) = 0
+        _WakeBubbleColor ("3. Bubble Cloud Colour", Color) = (0.6, 0.93, 0.9, 1)
+        _WakeFarSmoothing ("4. Smooth The Lace Far Away", Range(0, 1)) = 0
+
         [Header(Fishing spots from FishingSpot)]
         _SpotColor ("Spot Tint (alpha = strength)", Color) = (0.03, 0.24, 0.28, 0.4)
         _SpotRipples ("Spot Shiver", Range(0, 2)) = 0.3
@@ -227,6 +236,13 @@ Shader "FishingVR/LakeWater"
                 half _WakeFoamStrength;
                 half _CrestFoam;
                 half _RippleFoamCutoff;
+                half _WakeCore;
+                half _WakeCoreThreshold;
+                half _WakeLaceStyle;
+                float _WakeLaceTile;
+                half _WakeBubbleTint;
+                half4 _WakeBubbleColor;
+                half _WakeFarSmoothing;
                 half4 _SpotColor;
                 half _SpotRipples;
                 float _SpotRippleTile;
@@ -291,10 +307,11 @@ Shader "FishingVR/LakeWater"
             }
 
             // Interactive ripples: height gradient (slope) and wake foam from the simulation texture.
-            void SampleInteractiveRipples(float2 xz, out float2 slope, out float foam)
+            void SampleInteractiveRipples(float2 xz, out float2 slope, out float foam, out float churn)
             {
                 slope = 0;
                 foam = 0;
+                churn = 0;
                 if (_WaterRippleArea.w < 0.5)
                     return;
 
@@ -313,6 +330,7 @@ Shader "FishingVR/LakeWater"
 
                 slope = float2(hR - hL, hU - hD) / (2.0 * _WaterRippleParams.y) * fade;
                 foam = c.b * fade;
+                churn = c.a * fade; // white water churned by a propeller (short-lived)
             }
 
             // Width of the band for an object of this size at the waterline (m), relative to the full width: thin posts,
@@ -485,8 +503,8 @@ Shader "FishingVR/LakeWater"
                 }
 
                 float2 rippleSlope;
-                float wakeFoam;
-                SampleInteractiveRipples(xz, rippleSlope, wakeFoam);
+                float wakeFoam, wakeChurn;
+                SampleInteractiveRipples(xz, rippleSlope, wakeFoam, wakeChurn);
                 slope += rippleSlope * _InteractiveStrength;
 
                 float3 N = normalize(float3(-slope.x, 1.0, -slope.y));
@@ -587,6 +605,12 @@ Shader "FishingVR/LakeWater"
                 // from a low point of view).
                 color = lerp(color, _SpotColor.rgb * light, spot * _SpotColor.a * edgeSoftness);
 
+                // Option 3: the cloud of bubbles under the water churned by the propeller turns it milky turquoise.
+                half wakeRaw = saturate(wakeFoam * _WakeFoamStrength + length(rippleSlope) * _CrestFoam);
+                // Soft all the way to its sides: it is a cloud under the surface, not foam on it.
+                half bubbleCloud = smoothstep(0.0, 0.45, wakeChurn);
+                color = lerp(color, _WakeBubbleColor.rgb * light, bubbleCloud * bubbleCloud * _WakeBubbleTint * edgeSoftness);
+
                 // ---- Light lines (stylized caustics) --------------------------------------------------------
                 float2 patternUV = xz / _PatternTileSize + slope * _PatternWarp;
                 half lineA = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patternUV + wind * t * 0.35).r;
@@ -598,6 +622,8 @@ Shader "FishingVR/LakeWater"
                 lineMask *= lerp(1.0, _PatternDeepFade, depth01);
                 lineMask *= saturate(1.0 - viewDistance / _PatternFadeDistance) * edgeSoftness;
                 lineMask = saturate(lineMask * (1.0 + spot * _SpotLines)); // livelier light over a spot
+                // Option 2: no light lines under the wake (they are cells too: the foam read as over-exposed light).
+                lineMask *= 1.0 - smoothstep(0.05, 0.3, wakeRaw) * _WakeLaceStyle;
                 color = lerp(color, _PatternColor.rgb * light, lineMask * saturate(_PatternColor.a * (1.0 + spot * _SpotLines)));
 
                 // ---- Sun glints (small crisp sparkles) ------------------------------------------------------
@@ -664,7 +690,26 @@ Shader "FishingVR/LakeWater"
                 // further back), never as a solid white mass.
                 half wake = wakeFoam * _WakeFoamStrength + length(rippleSlope) * _CrestFoam;
                 half wakeAmount = saturate((wake * (0.7 + 0.6 * noise) - _RippleFoamCutoff) / max(1.0 - _RippleFoamCutoff, 0.05));
-                half wakeFoamMask = AAStep(max(0.45, 1.0 - wakeAmount * 0.75), lace) * step(0.001, wakeAmount);
+                // Option 2: the wake's own cells (the other cell field), finer than the shore's.
+                half wakeLace = lace;
+                if (_WakeLaceStyle > 0.5)
+                    wakeLace = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, xz / _WakeLaceTile + slope * 0.25 + wind * t * 0.15 + 0.29).g;
+                // Option 1 (below): near the propeller the lace thickens, between the solid core and the usual lace.
+                half churnAmount = saturate(wakeChurn * 2.5) * _WakeCore;
+                half laceAmount = max(wakeAmount, churnAmount);
+                half wakeEdge = max(lerp(0.45, 0.25, churnAmount), 1.0 - laceAmount * 0.75);
+                // Option 4, against the shimmer as the head moves: the lines get a full one-pixel soft edge (AAStep's
+                // cap made them harder than a pixel), and where they get thinner than a couple of pixels they fade into
+                // their average coverage, a soft pale trail.
+                half wakeFoamMask = (_WakeFarSmoothing > 0.5 ? AAStepWide(wakeEdge, wakeLace) : AAStep(wakeEdge, wakeLace)) * step(0.001, laceAmount);
+                half farSmooth = saturate((fwidth(wakeLace) - 0.08) / 0.15) * _WakeFarSmoothing;
+                wakeFoamMask = lerp(wakeFoamMask, laceAmount * 0.4, farSmooth);
+                // Option 1: the fresh foam right behind the propeller drawn like the contact foam: a solid core cut by
+                // round bubbles, breaking up into the lace as it gets older.
+                // From the churned water only (not the foam of the V's crests). 0 at the threshold, 1 at twice it.
+                half coreField = saturate((wakeChurn - _WakeCoreThreshold) / max(_WakeCoreThreshold, 0.02));
+                half wakeCore = AAStepWide(0.5, coreField + (bubbles - 0.5) * 2.0 * _ContactFoamJagged) * step(0.001, _WakeCore) * step(0.001, coreField);
+                wakeFoamMask = max(wakeFoamMask, wakeCore * _WakeCore);
 
                 half foam = saturate(max(max(max(shoreFoam, ring), contactFoam), wakeFoamMask));
                 // Fishing spot rings: see-through, so they read as light ripples rather than white paint.

@@ -47,6 +47,12 @@ namespace FishingVR.Water
         [Tooltip("Time (s) for the wake foam to fade by half.")]
         [SerializeField, Range(0.1f, 10f)] float foamHalfLife = 2.5f;
 
+        [Tooltip("Time (s) for the churned white water right behind a propeller to fade by half (kept apart from the foam).")]
+        [SerializeField, Range(0.1f, 5f)] float churnHalfLife = 1.2f;
+
+        [Tooltip("How fast the churned white water spreads sideways (per second): the wash behind the propeller widens into a cone as it fades. 0 = a straight band.")]
+        [SerializeField, Range(0f, 60f)] float churnSpread = 40f;
+
         [Tooltip("Simulation steps per second (fixed, independent of the frame rate).")]
         [SerializeField, Range(30, 120)] int stepsPerSecond = 60;
 
@@ -74,6 +80,8 @@ namespace FishingVR.Water
         static readonly int Courant2Id = Shader.PropertyToID("_Courant2");
         static readonly int DampingId = Shader.PropertyToID("_Damping");
         static readonly int FoamDecayId = Shader.PropertyToID("_FoamDecay");
+        static readonly int ChurnDecayId = Shader.PropertyToID("_ChurnDecay");
+        static readonly int ChurnSpreadId = Shader.PropertyToID("_ChurnSpread");
         static readonly int EdgeWidthId = Shader.PropertyToID("_EdgeWidth");
         static readonly int TexelWorldId = Shader.PropertyToID("_TexelWorld");
         static readonly int SteepThresholdId = Shader.PropertyToID("_SteepThreshold");
@@ -89,6 +97,7 @@ namespace FishingVR.Water
             public float radius;     // m
             public float height;     // m
             public float foam;       // 0-1
+            public float churn;      // 0-1, churned white water (propeller)
         }
 
         readonly List<Splat> pendingSplats = new();
@@ -120,7 +129,8 @@ namespace FishingVR.Water
         /// <param name="radius">Size of the disturbed patch (m).</param>
         /// <param name="height">Water raised (positive) or pushed down (negative), in metres. A few cm is a lot.</param>
         /// <param name="foam">Foam left on the water (0-1).</param>
-        public static void AddImpulse(Vector3 worldPosition, float radius, float height, float foam = 0f)
+        /// <param name="churn">Churned white water (0-1): the dense, short-lived foam right behind a propeller.</param>
+        public static void AddImpulse(Vector3 worldPosition, float radius, float height, float foam = 0f, float churn = 0f)
         {
             var ripples = GetOrCreate();
             if (ripples == null)
@@ -131,6 +141,7 @@ namespace FishingVR.Water
                 radius = radius,
                 height = height,
                 foam = foam,
+                churn = churn,
             });
         }
 
@@ -138,12 +149,12 @@ namespace FishingVR.Water
         /// Continuous disturbance, to call every frame (or every physics step) while something moves in the water.
         /// Rates are per second; the call is scaled by the current delta time.
         /// </summary>
-        public static void AddDisturbance(Vector3 worldPosition, float radius, float heightPerSecond, float foamPerSecond = 0f)
+        public static void AddDisturbance(Vector3 worldPosition, float radius, float heightPerSecond, float foamPerSecond = 0f, float churnPerSecond = 0f)
         {
             float dt = Time.deltaTime; // = fixedDeltaTime inside FixedUpdate.
             if (dt <= 0f)
                 return;
-            AddImpulse(worldPosition, radius, heightPerSecond * dt, foamPerSecond * dt);
+            AddImpulse(worldPosition, radius, heightPerSecond * dt, foamPerSecond * dt, churnPerSecond * dt);
         }
 
         // ------------------------------------------------------------------------------------------------
@@ -294,6 +305,8 @@ namespace FishingVR.Water
                 material.SetFloat(Courant2Id, Mathf.Min(courant * courant, 0.45f)); // Keeps the scheme stable.
                 material.SetFloat(DampingId, Mathf.Pow(0.5f, stepDt / waveHalfLife));
                 material.SetFloat(FoamDecayId, Mathf.Pow(0.5f, stepDt / foamHalfLife));
+                material.SetFloat(ChurnDecayId, Mathf.Pow(0.5f, stepDt / churnHalfLife));
+                material.SetFloat(ChurnSpreadId, Mathf.Clamp01(churnSpread * stepDt));
                 material.SetFloat(EdgeWidthId, edgeWidth);
                 material.SetFloat(TexelWorldId, texel);
                 material.SetFloat(SteepThresholdId, steepFoamThreshold);
@@ -380,7 +393,7 @@ namespace FishingVR.Water
                         continue; // Outside the simulated area.
 
                     splatData[count] = new Vector4(uv.x, uv.y, radiusUV, splat.height);
-                    splatFoamData[count] = new Vector4(splat.foam, 0f, 0f, 0f);
+                    splatFoamData[count] = new Vector4(splat.foam, splat.churn, 0f, 0f);
                     count++;
                 }
             }

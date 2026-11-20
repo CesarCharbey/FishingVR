@@ -1,7 +1,8 @@
 // One step of the interactive ripple simulation (driven by WaterRipples.cs, never put on a material).
 //
 // The texture covers a square of the lake around the player. Each texel stores:
-//   R = water height now (m), G = height at the previous step, B = foam amount (0-1).
+//   R = water height now (m), G = height at the previous step, B = foam amount (0-1),
+//   A = churned white water right behind a propeller (0-1, short-lived).
 // Step = discrete 2D wave equation (each point is pulled towards the average of its neighbours, keeping
 // its momentum), with damping, plus the disturbances ("splats") of this frame. Foam appears where the
 // waves are steep or where a splat drops some, slowly spreads and fades.
@@ -41,10 +42,12 @@ Shader "Hidden/FishingVR/WaterRippleSim"
             float _SteepThreshold; // wave slope above which foam appears
             float _SteepFoam;     // foam added per step at twice the threshold slope
             float _FoamSpread;    // share of the neighbours' foam blended in per step (0-1)
+            float _ChurnDecay;    // churned white water kept per step (0-1): fades much faster than the foam
+            float _ChurnSpread;   // share of the neighbours' churn blended in per step (0-1), over a wider ring
 
             float _SplatCount;
             float4 _Splats[MAX_SPLATS];     // xy = centre (UV), z = radius (UV), w = height added (m)
-            float4 _SplatFoam[MAX_SPLATS];  // x = foam added
+            float4 _SplatFoam[MAX_SPLATS];  // x = foam added, y = churned white water added (propeller)
 
             float4 State(float2 uv)
             {
@@ -71,6 +74,14 @@ Shader "Hidden/FishingVR/WaterRippleSim"
 
                 // Foam: slowly spreads to the neighbours and fades.
                 float foam = lerp(c.b, (left.b + right.b + down.b + up.b) * 0.25, _FoamSpread) * _FoamDecay;
+                // Churned white water right behind a propeller (A): its own channel, so the lake can draw it apart
+                // from the foam of the wave crests; short-lived. It spreads sideways much faster than the foam (the
+                // neighbours 1 and 3 texels away), so the wash opens into a cone as it fades, with soft sides.
+                float2 far = d * 3.0;
+                float churnRing = left.a + right.a + down.a + up.a
+                                + State(uv - float2(far.x, 0)).a + State(uv + float2(far.x, 0)).a
+                                + State(uv - float2(0, far.y)).a + State(uv + float2(0, far.y)).a;
+                float churn = lerp(c.a, churnRing * 0.125, _ChurnSpread) * _ChurnDecay;
 
                 // Steep waves break into foam (the arms of the boat's V wake, splashes). It then stays behind
                 // the moving crest and fades, drawing foam lines along the wake.
@@ -87,13 +98,14 @@ Shader "Hidden/FishingVR/WaterRippleSim"
                     falloff *= falloff;
                     next += _Splats[k].w * falloff;
                     foam += _SplatFoam[k].x * falloff;
+                    churn += _SplatFoam[k].y * falloff;
                 }
 
                 // Absorbing border: waves fade out instead of bouncing back from the edge of the area.
                 float edge = min(min(i.uv.x, i.uv.y), min(1.0 - i.uv.x, 1.0 - i.uv.y));
                 float absorb = lerp(0.85, 1.0, saturate(edge / _EdgeWidth));
 
-                return float4(next * absorb, h * absorb, saturate(foam), 0);
+                return float4(next * absorb, h * absorb, saturate(foam), saturate(churn));
             }
             ENDCG
         }
