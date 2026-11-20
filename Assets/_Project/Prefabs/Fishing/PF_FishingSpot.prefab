@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Fishing.FishingSpot
   radius: 4
+  innerRadiusRatio: 0.6
   arriveDuration: 30
   activeMinutes: 12
   leaveDuration: 45
