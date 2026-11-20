@@ -9,8 +9,9 @@
 //    with the ripples, and fade out with the distance travelled in the water ("Visibility").
 // 2. A net of thick, soft light bands drifting on the surface, distorted by the ripples, and caustics
 //    dancing on the bottom of the shallows (T_Water_Caustics: R/G = cell-edge distance fields, B = blobs).
-// 3. Crisp white foam: cellular lace along the shore, a solid jagged ring around everything poking out of the water
-//    (rocks, dock posts, hull), and the rings / wake drawn by the interactive ripples.
+// 3. Crisp white foam: cellular lace along the shore, a solid jagged band all around everything fixed poking out of
+//    the water (rocks, dock posts: distance to their waterline baked in T_Lake_Contact), and the rings / wake drawn
+//    by the interactive ripples.
 // 4. A light tint towards the horizon (stylized Fresnel) instead of a realistic mirror reflection.
 // 5. Fishing spots (FishingSpot): inside each spot the water shivers, gets slightly darker (a school of fish
 //    underneath) and catches more light lines and sun glints, with an irregular edge, scaled by the spot intensity.
@@ -68,6 +69,16 @@ Shader "FishingVR/LakeWater"
         _RingFoamDepth ("Contact Ring Depth (m)", Range(0, 0.5)) = 0.07
         _ShoreFade ("Fade Into The Bank (m of depth)", Range(0.01, 0.6)) = 0.15
         _BedTolerance ("Lake Bed Match Tolerance (m)", Range(0.01, 0.3)) = 0.08
+
+        [Header(Contact foam around rocks and posts baked with the lake depth)]
+        [NoScaleOffset] _ContactTex ("Distance To The Waterlines (baked)", 2D) = "white" {}
+        _ContactFoamWidth ("Contact Foam Width (m)", Range(0, 1)) = 0.3
+        _ContactFoamJagged ("Contact Foam Jaggedness", Range(0, 1)) = 0.7
+        _ContactFoamNoiseTile ("Contact Foam Bubbles Tile Size (m)", Float) = 1.8
+        _ContactLaceWidth ("Contact Lace Width Beyond The Band (m)", Range(0, 1.5)) = 0.3
+        _ContactFoamBreathing ("Contact Foam Lapping Speed", Range(0, 3)) = 1.1
+        _ContactSizeReference ("Contact Foam Full Width From Size (m, re-bake)", Range(0.1, 5)) = 0.6
+        _ContactSmallScale ("Contact Foam Width On Small Objects (re-bake)", Range(0.05, 1)) = 0.35
 
         [Header(Lake bed depth baked by FishingVR Eau Calculer la profondeur du lac)]
         [NoScaleOffset] _BedDepthTex ("Lake Bed Depth (baked)", 2D) = "black" {}
@@ -141,6 +152,9 @@ Shader "FishingVR/LakeWater"
             TEXTURE2D(_FoamTex);    SAMPLER(sampler_FoamTex);
             TEXTURE2D(_PatternTex); SAMPLER(sampler_PatternTex);
             TEXTURE2D(_BedDepthTex); SAMPLER(sampler_BedDepthTex);
+            TEXTURE2D(_ContactTex);  SAMPLER(sampler_ContactTex);
+            // Distance stored in _ContactTex (0..1 = 0..CONTACT_RANGE m). Must match LakeDepthBaker.ContactRange.
+            #define CONTACT_RANGE 2.0
 
             // Set globally by WaterRipples (FishingVR.Water). _WaterRippleArea.w = 0 when there is no simulation.
             TEXTURE2D(_WaterRippleTex); SAMPLER(sampler_WaterRippleTex);
@@ -151,6 +165,15 @@ Shader "FishingVR/LakeWater"
             #define MAX_FISHING_SPOTS 8
             float4 _FishingSpots[MAX_FISHING_SPOTS];
             float _FishingSpotCount;
+
+            // Set globally by WaterContactFoam (FishingVR.Water): moving objects at the surface (buoys, boat, bobber),
+            // as their waterline: a circle, or an outline (edges in _ContactSegments).
+            #define MAX_CONTACT_SHAPES 16
+            #define MAX_CONTACT_SEGMENTS 64
+            float4 _ContactShapesA[MAX_CONTACT_SHAPES]; // xy = centre XZ, z = radius (circle) or around the outline (m), w = width scale x strength
+            float4 _ContactShapesB[MAX_CONTACT_SHAPES]; // x = first edge, y = edge count (0 = circle), z = size of the waterline (m)
+            float4 _ContactSegments[MAX_CONTACT_SEGMENTS]; // outline edges: xz of both ends
+            float _ContactShapeCount;
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _ShallowColor;
@@ -188,6 +211,13 @@ Shader "FishingVR/LakeWater"
                 float _RingFoamDepth;
                 float _ShoreFade;
                 float _BedTolerance;
+                float _ContactFoamWidth;
+                half _ContactFoamJagged;
+                float _ContactFoamNoiseTile;
+                float _ContactLaceWidth;
+                half _ContactFoamBreathing;
+                float _ContactSizeReference;
+                float _ContactSmallScale;
                 float4 _BedDepthArea;
                 half _LightInfluence;
                 half _ShadowStrength;
@@ -252,6 +282,14 @@ Shader "FishingVR/LakeWater"
                 return smoothstep(-w, w, v);
             }
 
+            // Same without the cap, for smooth inputs (baked distances): stays about one pixel wide far away.
+            float AAStepWide(float edge, float x)
+            {
+                float v = x - edge;
+                float w = max(fwidth(v) * 0.75, 1e-4);
+                return smoothstep(-w, w, v);
+            }
+
             // Interactive ripples: height gradient (slope) and wake foam from the simulation texture.
             void SampleInteractiveRipples(float2 xz, out float2 slope, out float foam)
             {
@@ -275,6 +313,67 @@ Shader "FishingVR/LakeWater"
 
                 slope = float2(hR - hL, hU - hD) / (2.0 * _WaterRippleParams.y) * fade;
                 foam = c.b * fade;
+            }
+
+            // Width of the band for an object of this size at the waterline (m), relative to the full width: thin posts,
+            // buoys and pebbles get a narrower band than big rocks. Same formula as WaterContactFoam.BandScale (the
+            // lake bake uses it for the fixed objects).
+            float ContactBandScale(float size)
+            {
+                return clamp(sqrt(max(size, 0.0) / max(_ContactSizeReference, 0.01)), _ContactSmallScale, 1.0);
+            }
+
+            float SegmentDistance(float2 p, float4 s)
+            {
+                float2 ab = s.zw - s.xy;
+                float h = saturate(dot(p - s.xy, ab) / max(dot(ab, ab), 1e-8));
+                return length(p - (s.xy + ab * h));
+            }
+
+            // Distance to the waterline of the nearest moving object (WaterContactFoam), in metres of a full width
+            // band (divided by the object's band scale, like the baked distances).
+            float MovingContactDistance(float2 xz)
+            {
+                float best = CONTACT_RANGE;
+                int count = min((int)_ContactShapeCount, MAX_CONTACT_SHAPES);
+                [loop]
+                for (int i = 0; i < count; i++)
+                {
+                    float4 a = _ContactShapesA[i];
+                    float4 b = _ContactShapesB[i];
+                    float scale = max(a.w * ContactBandScale(b.z), 1e-3);
+                    float toCentre = length(xz - a.xy);
+                    if ((toCentre - a.z) / scale >= best)
+                        continue; // too far to matter (the outline lies within a.z of the centre)
+                    float d;
+                    if (b.y < 0.5)
+                    {
+                        d = max(toCentre - a.z, 0.0);
+                    }
+                    else
+                    {
+                        d = 1e4;
+                        float leftMost = 1e4, rightMost = -1e4;
+                        int first = (int)b.x;
+                        int last = min(first + (int)b.y, MAX_CONTACT_SEGMENTS);
+                        [loop]
+                        for (int j = first; j < last; j++)
+                        {
+                            float4 s = _ContactSegments[j];
+                            d = min(d, SegmentDistance(xz, s));
+                            // Side of the edge the point is on (the outline is convex).
+                            float side = (s.z - s.x) * (xz.y - s.y) - (s.w - s.y) * (xz.x - s.x);
+                            leftMost = min(leftMost, side);
+                            rightMost = max(rightMost, side);
+                        }
+                        // Inside the outline: against the object (hidden by it), so the band starts right at the hull
+                        // with no strip of water in between.
+                        if (leftMost >= 0.0 || rightMost <= 0.0)
+                            d = 0.0;
+                    }
+                    best = min(best, d / scale);
+                }
+                return best;
             }
 
             // Fishing spots: 1 in the middle of a spot (times its intensity), fading out towards an irregular edge.
@@ -424,12 +523,14 @@ Shader "FishingVR/LakeWater"
                 float bedDepth = waterDepth;
                 half onBed = 1.0;     // flat-ish bed (caustics, shore foam, colour from the exact depth)
                 half bakedBed = 1.0;  // part of the baked bed, vertical sides included (rocks: contact ring)
+                float contactDistance = CONTACT_RANGE; // to the nearest waterline of a rock, post... (baked)
                 if (_BedDepthArea.z > 0.0)
                 {
                     float2 bedUV = (xz - _BedDepthArea.xy) * _BedDepthArea.zw;
                     float2 sceneBedUV = (straightScene.xz - _BedDepthArea.xy) * _BedDepthArea.zw;
                     if (all(bedUV > 0.0) && all(bedUV < 1.0))
                     {
+                        contactDistance = SAMPLE_TEXTURE2D_LOD(_ContactTex, sampler_ContactTex, bedUV, 0).r * CONTACT_RANGE;
                         float bakedHere = SAMPLE_TEXTURE2D_LOD(_BedDepthTex, sampler_BedDepthTex, bedUV, 0).r * 6.0 - 1.0;
                         float bakedThere = SAMPLE_TEXTURE2D_LOD(_BedDepthTex, sampler_BedDepthTex, saturate(sceneBedUV), 0).r * 6.0 - 1.0;
                         // The visible point is the bed itself: within a few cm of the baked depth (not the bottom
@@ -442,6 +543,8 @@ Shader "FishingVR/LakeWater"
                         bedDepth = max(bakedHere, 0.0);
                     }
                 }
+
+                contactDistance = min(contactDistance, MovingContactDistance(xz)); // buoys, boat, bobber
 
                 // ---- Caustics on the bottom: light bands dancing on the sand, fading with depth -------------
                 {
@@ -532,13 +635,38 @@ Shader "FishingVR/LakeWater"
                 // Only on the lake bed itself (baked): not on the fish, the hull or the dock posts.
                 half ring = AAStep(waterDepth, _RingFoamDepth * (0.4 + 0.9 * noise) * saturate(V.y * 2.0)) * steep * bakedBed;
 
+                // Contact foam: a solid jagged band hugging everything fixed that pokes out of the water (rocks,
+                // dock posts, logs), all the way around whatever the point of view. It follows the baked distance
+                // to their waterline, not the depth seen through the water, so nothing under the surface (fish,
+                // hull, propeller) turns white. Just outside, it breaks up into a little lace; it laps in and out.
+                // The edge is cut by round bubbles (foam noise, contrasted): scalloped outline, a few holes near the
+                // edge and a few bubbles breaking away. Bubbles smaller than a few pixels would shimmer: the band
+                // gets smoother far away.
+                float2 bubbleUV = xz / _ContactFoamNoiseTile;
+                half bubbles = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, bubbleUV + wind * t * 0.25).r * 0.7
+                             + SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, bubbleUV * 2.3 - crossWind * t * 0.35 + 0.53).r * 0.3;
+                bubbles = saturate((bubbles - 0.45) * 2.2 + 0.5);
+                half jagAmount = _ContactFoamJagged * saturate(1.5 - pixelFootprint * 15.0);
+                float bandWidth = _ContactFoamWidth * (1.0 + 0.1 * sin(_Time.y * _ContactFoamBreathing + blobs * 6.2832));
+                bandWidth *= 1.0 + (bubbles - 0.5) * 2.0 * jagAmount;
+                // A little wider far away so it stays readable (capped: towards the horizon a pixel covers metres of
+                // water, the band would then swallow everything near the far shore).
+                bandWidth = max(bandWidth, 0.0) + min(pixelFootprint, 0.06) * step(0.001, _ContactFoamWidth);
+                // Nothing where no waterline is within reach (the stored distance is capped at CONTACT_RANGE).
+                half contactBand = AAStepWide(contactDistance, bandWidth) * step(contactDistance, CONTACT_RANGE * 0.98);
+                // A little broken lace just outside the band (threshold above 1 at the end: nothing further out).
+                half laceFade = saturate((contactDistance - bandWidth) / max(_ContactLaceWidth, 1e-3));
+                half contactLaceEdge = lerp(0.55, 1.05, laceFade) + (blobs - 0.5) * 0.25 * (1.0 - laceFade);
+                half contactLace = AAStep(contactLaceEdge, lace) * step(0.001, _ContactLaceWidth);
+                half contactFoam = max(contactBand, contactLace);
+
                 // Wake foam drawn as lace like the shore (dense right behind the propeller, thinning into lines
                 // further back), never as a solid white mass.
                 half wake = wakeFoam * _WakeFoamStrength + length(rippleSlope) * _CrestFoam;
                 half wakeAmount = saturate((wake * (0.7 + 0.6 * noise) - _RippleFoamCutoff) / max(1.0 - _RippleFoamCutoff, 0.05));
                 half wakeFoamMask = AAStep(max(0.45, 1.0 - wakeAmount * 0.75), lace) * step(0.001, wakeAmount);
 
-                half foam = saturate(max(max(shoreFoam, ring), wakeFoamMask));
+                half foam = saturate(max(max(max(shoreFoam, ring), contactFoam), wakeFoamMask));
                 // Fishing spot rings: see-through, so they read as light ripples rather than white paint.
                 half spotRings = FishingSpotRings(xz, viewDistance, pixelFootprint) * edgeSoftness;
                 color = lerp(color, _FoamColor.rgb * light, spotRings * _SpotRingOpacity);

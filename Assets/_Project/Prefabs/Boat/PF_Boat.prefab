@@ -119,6 +119,7 @@ GameObject:
   - component: {fileID: 2179896910684330150}
   - component: {fileID: 7874865172028366959}
   - component: {fileID: 5823190457712309461}
+  - component: {fileID: 1761588849783269781}
   m_Layer: 6
   m_Name: PF_Boat
   m_TagString: Untagged
@@ -358,6 +359,47 @@ MonoBehaviour:
   spraySpeed: 2.5
   sprayRate: 40
   impactSplashCount: 60
+--- !u!114 &1761588849783269781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4119829530118619942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 1
+  widthScale: 0.6
+  surfaceTolerance: 0.3
+  waterlineMesh: {fileID: 2731369035562217641}
+  overhangHeight: 0
+  waterlineCentre: {x: -0.021189291, y: 0.25, z: -0.29534677}
+  waterlineRadius: 2.0149136
+  waterlineOutline:
+  - {x: -0.5999993, y: -0.23142362}
+  - {x: -0.59999496, y: -0.6479966}
+  - {x: -0.57888013, y: -1.2959929}
+  - {x: -0.5519946, y: -1.7999939}
+  - {x: -0.5437216, y: -1.8059974}
+  - {x: -0.42378634, y: -1.8060029}
+  - {x: 0.54371774, y: -1.80601}
+  - {x: 0.5519965, y: -1.7999986}
+  - {x: 0.5788775, y: -1.2960049}
+  - {x: 0.5999968, y: -0.6480044}
+  - {x: 0.5999988, y: -0.23143569}
+  - {x: 0.59949446, y: 0.0000030459405}
+  - {x: 0.4714725, y: 0.5039925}
+  - {x: 0.38238266, y: 0.750016}
+  - {x: 0.044484142, y: 1.6172256}
+  - {x: -0.0000028505156, y: 1.7194554}
+  - {x: -0.04448279, y: 1.6172329}
+  - {x: -0.38237908, y: 0.75000554}
+  - {x: -0.4714707, y: 0.5039979}
+  - {x: -0.59949446, y: -0.0000030459405}
+  waterlineSize: 0.77592605
 --- !u!1 &4632980671019195990
 GameObject:
   m_ObjectHideFlags: 0

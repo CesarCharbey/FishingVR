@@ -27,6 +27,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 369aa2db9d629414f9efcddeb9258127, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _ContactTex:
+        m_Texture: {fileID: 2800000, guid: 161c20751d475594983141deb46d5663, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _FoamTex:
         m_Texture: {fileID: 2800000, guid: f9f98d3d123b4e909e9838ba713bdb0a, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -44,6 +48,13 @@ Material:
     - _BedTolerance: 0.08
     - _ColorBands: 0
     - _ColorDepth: 4
+    - _ContactFoamBreathing: 1.1
+    - _ContactFoamJagged: 0.7
+    - _ContactFoamNoiseTile: 1.8
+    - _ContactFoamWidth: 0.3
+    - _ContactLaceWidth: 0.3
+    - _ContactSizeReference: 0.6
+    - _ContactSmallScale: 0.35
     - _CrestFoam: 1.2
     - _FloorCaustics: 0.7
     - _FloorCausticsDepth: 2.5

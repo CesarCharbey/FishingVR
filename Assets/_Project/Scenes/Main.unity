@@ -39679,8 +39679,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 107216266}
   m_SourcePrefab: {fileID: 100100000, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+--- !u!1 &107216265 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+  m_PrefabInstance: {fileID: 107216264}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &107216266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107216265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0, y: -0.1, z: 0}
+  waterlineRadius: 0.32000452
+  waterlineOutline:
+  - {x: -0.3199997, y: 0}
+  - {x: -0.25888824, y: -0.1880951}
+  - {x: -0.09888458, y: -0.30433655}
+  - {x: 0.09888458, y: -0.30433655}
+  - {x: 0.25888824, y: -0.1880951}
+  - {x: 0.3199997, y: 0}
+  - {x: 0.25888824, y: 0.1880951}
+  - {x: 0.09888458, y: 0.30433655}
+  - {x: -0.09888458, y: 0.30433655}
+  - {x: -0.25888824, y: 0.1880951}
+  waterlineSize: 0.30433908
 --- !u!1001 &107705733
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -232529,8 +232568,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1130640276}
   m_SourcePrefab: {fileID: 100100000, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+--- !u!1 &616523741 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+  m_PrefabInstance: {fileID: 616523740}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &616823727
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -299366,8 +299413,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2009597126}
   m_SourcePrefab: {fileID: 100100000, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+--- !u!1 &795479100 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+  m_PrefabInstance: {fileID: 795479099}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &795625442
 GameObject:
   m_ObjectHideFlags: 0
@@ -430086,6 +430141,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
   m_PrefabInstance: {fileID: 616523740}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1130640276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616523741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0.0000000059604646, y: -0.1, z: -0.0000000014901161}
+  waterlineRadius: 0.3200086
+  waterlineOutline:
+  - {x: -0.32000154, y: -0.00000634774}
+  - {x: -0.25888714, y: -0.18808776}
+  - {x: -0.098887235, y: -0.30433407}
+  - {x: 0.09887856, y: -0.30434936}
+  - {x: 0.2588802, y: -0.18809672}
+  - {x: 0.32000154, y: 0.00000634774}
+  - {x: 0.25888714, y: 0.18808776}
+  - {x: 0.098887235, y: 0.30433407}
+  - {x: -0.09887856, y: 0.30434936}
+  - {x: -0.2588802, y: 0.18809672}
+  waterlineSize: 0.30433905
 --- !u!1 &1130818720 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4adb0e3b256341c4b9e8bae6e1f8f366, type: 3}
@@ -507879,8 +507965,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1323116145}
   m_SourcePrefab: {fileID: 100100000, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+--- !u!1 &1323116144 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+  m_PrefabInstance: {fileID: 1323116143}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1323116145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1323116144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0, y: -0.1, z: 0}
+  waterlineRadius: 0.32001308
+  waterlineOutline:
+  - {x: -0.31999993, y: 0}
+  - {x: -0.25888538, y: -0.18807983}
+  - {x: -0.098885536, y: -0.3043518}
+  - {x: 0.098885536, y: -0.3043518}
+  - {x: 0.25888538, y: -0.18807983}
+  - {x: 0.31999993, y: 0}
+  - {x: 0.25888538, y: 0.18807983}
+  - {x: 0.098885536, y: 0.3043518}
+  - {x: -0.098885536, y: 0.3043518}
+  - {x: -0.25888538, y: 0.18807983}
+  waterlineSize: 0.30434048
 --- !u!1 &1323229923
 GameObject:
   m_ObjectHideFlags: 0
@@ -523770,8 +523895,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1378293243}
   m_SourcePrefab: {fileID: 100100000, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+--- !u!1 &1378293242 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+  m_PrefabInstance: {fileID: 1378293241}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1378293243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1378293242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0, y: -0.1, z: 0}
+  waterlineRadius: 0.3200022
+  waterlineOutline:
+  - {x: -0.3199997, y: 0}
+  - {x: -0.25888538, y: -0.1880951}
+  - {x: -0.098885536, y: -0.30433655}
+  - {x: 0.098885536, y: -0.30433655}
+  - {x: 0.25888538, y: -0.1880951}
+  - {x: 0.3199997, y: 0}
+  - {x: 0.25888538, y: 0.1880951}
+  - {x: 0.098885536, y: 0.30433655}
+  - {x: -0.098885536, y: 0.30433655}
+  - {x: -0.25888538, y: 0.1880951}
+  waterlineSize: 0.3043383
 --- !u!1001 &1378370265
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -582979,8 +583143,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1532126362}
   m_SourcePrefab: {fileID: 100100000, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+--- !u!1 &1532126361 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
+  m_PrefabInstance: {fileID: 1532126360}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1532126362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1532126361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0, y: -0.1, z: 0}
+  waterlineRadius: 0.32000142
+  waterlineOutline:
+  - {x: -0.3199997, y: 0}
+  - {x: -0.25888443, y: -0.1880951}
+  - {x: -0.09888458, y: -0.30433655}
+  - {x: 0.09888458, y: -0.30433655}
+  - {x: 0.25888443, y: -0.1880951}
+  - {x: 0.3199997, y: 0}
+  - {x: 0.25888443, y: 0.1880951}
+  - {x: 0.09888458, y: 0.30433655}
+  - {x: -0.09888458, y: 0.30433655}
+  - {x: -0.25888443, y: 0.1880951}
+  waterlineSize: 0.30433792
 --- !u!1001 &1532190148
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -744036,8 +744239,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6f15c4600880ef449ad9f95762d284d8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1952440380}
   m_SourcePrefab: {fileID: 100100000, guid: 6f15c4600880ef449ad9f95762d284d8, type: 3}
+--- !u!1 &1952440379 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 6f15c4600880ef449ad9f95762d284d8, type: 3}
+  m_PrefabInstance: {fileID: 1952440378}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1952440380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1952440379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0, y: -0.11, z: 0}
+  waterlineRadius: 0.24620146
+  waterlineOutline:
+  - {x: -0.24620056, y: 0}
+  - {x: -0.1991806, y: -0.14471436}
+  - {x: -0.07608032, y: -0.23414612}
+  - {x: 0.07608032, y: -0.23414612}
+  - {x: 0.1991806, y: -0.14471436}
+  - {x: 0.24620056, y: 0}
+  - {x: 0.1991806, y: 0.14471436}
+  - {x: 0.07608032, y: 0.23414612}
+  - {x: -0.07608032, y: 0.23414612}
+  - {x: -0.1991806, y: 0.14471436}
+  waterlineSize: 0.23414937
 --- !u!1 &1952471219
 GameObject:
   m_ObjectHideFlags: 0
@@ -766407,6 +766649,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 995c571fdc6ffa845aa742b505473ae4, type: 3}
   m_PrefabInstance: {fileID: 795479099}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2009597126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795479100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee9162bc533c3d4cbdccb067d5194a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Water.WaterContactFoam
+  shape: 0
+  widthScale: 1
+  surfaceTolerance: 0.1
+  waterlineMesh: {fileID: 0}
+  overhangHeight: 0.6
+  waterlineCentre: {x: 0, y: -0.1, z: -0.0000000014901161}
+  waterlineRadius: 0.32000792
+  waterlineOutline:
+  - {x: -0.31998906, y: -0.0000027847518}
+  - {x: -0.25888428, y: -0.18809167}
+  - {x: -0.09888054, y: -0.3043394}
+  - {x: 0.09890021, y: -0.3043416}
+  - {x: 0.25888553, y: -0.18809108}
+  - {x: 0.31998906, y: 0.0000027847518}
+  - {x: 0.25888428, y: 0.18809167}
+  - {x: 0.09888054, y: 0.3043394}
+  - {x: -0.09890021, y: 0.3043416}
+  - {x: -0.25888553, y: 0.18809108}
+  waterlineSize: 0.30433732
 --- !u!1001 &2009616641
 PrefabInstance:
   m_ObjectHideFlags: 0
