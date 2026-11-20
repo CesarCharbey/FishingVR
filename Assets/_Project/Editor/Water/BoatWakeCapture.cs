@@ -28,7 +28,15 @@ namespace FishingVR.EditorTools
         const string MainScene = "Assets/_Project/Scenes/Main.unity";
         const string DirKey = "BoatWakeCapture.Dir";
         const string LiveKey = "BoatWakeCapture.Live";
+        const string VariantsKey = "BoatWakeCapture.Variants";
+        const string RippleAreaKey = "BoatWakeCapture.RippleArea";
+        const string FoamHalfLifeKey = "BoatWakeCapture.FoamHalfLife";
 
+        /// <summary>
+        /// Batch entry point. Options: -variants renders every view once per wake look option (1 to 4, alone)
+        /// instead of without/with the contact foam, and measures the shimmer of option 4; -rippleArea 64 runs with a
+        /// larger simulated area (option 5).
+        /// </summary>
         public static void Capture()
         {
             string dir = ArgValue("-captureDir") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "WakeCaptures");
@@ -36,6 +44,9 @@ namespace FishingVR.EditorTools
             EditorSceneManager.OpenScene(MainScene);
             SessionState.SetString(DirKey, dir);
             SessionState.SetBool(LiveKey, false);
+            SessionState.SetBool(VariantsKey, Array.IndexOf(Environment.GetCommandLineArgs(), "-variants") >= 0);
+            SessionState.SetString(RippleAreaKey, ArgValue("-rippleArea") ?? "");
+            SessionState.SetString(FoamHalfLifeKey, ArgValue("-foamHalfLife") ?? "");
             Debug.Log($"[WakeCapture] Entering play mode, pictures to {dir}");
             EditorApplication.EnterPlaymode();
         }
@@ -126,10 +137,44 @@ namespace FishingVR.EditorTools
                 hydro = motor.GetComponent<BoatHydrodynamics>();
                 var water = Object.FindAnyObjectByType<WaterSurface>();
                 waterMaterial = water != null && water.GetComponent<Renderer>() != null ? water.GetComponent<Renderer>().sharedMaterial : null;
+                // A shader that does not compile still renders (its last good version): stop instead.
+                if (waterMaterial != null && ShaderUtil.ShaderHasError(waterMaterial.shader))
+                {
+                    foreach (var message in ShaderUtil.GetShaderMessages(waterMaterial.shader))
+                        Debug.LogError($"[WakeCapture] Shader error line {message.line}: {message.message}");
+                    throw new InvalidOperationException("[WakeCapture] The water shader does not compile.");
+                }
 
                 // The ripples follow the boat, as they follow the player sitting in it in the game.
-                if (WaterRipples.Instance != null)
-                    typeof(WaterRipples).GetField("follow", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(WaterRipples.Instance, motor.transform);
+                var ripples = WaterRipples.Instance;
+                if (ripples != null)
+                {
+                    const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
+                    typeof(WaterRipples).GetField("follow", flags)?.SetValue(ripples, motor.transform);
+                    Debug.Log("[WakeCapture] The ripple simulation follows the boat.");
+                    // Option 5: a larger simulated area, same texel size (the trail is cut where the area ends).
+                    if (float.TryParse(SessionState.GetString(RippleAreaKey, ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float area) && area > 0f)
+                    {
+                        var sizeField = typeof(WaterRipples).GetField("areaSize", flags);
+                        var resField = typeof(WaterRipples).GetField("resolution", flags);
+                        float oldArea = (float)sizeField.GetValue(ripples);
+                        int oldRes = (int)resField.GetValue(ripples);
+                        sizeField.SetValue(ripples, area);
+                        resField.SetValue(ripples, Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(oldRes * area / oldArea)));
+                        ripples.enabled = false; // recreates the simulation textures at the new size
+                        ripples.enabled = true;
+                        Debug.Log($"[WakeCapture] Ripple area {oldArea} m / {oldRes} px -> {area} m / {resField.GetValue(ripples)} px");
+                    }
+                    // Option 5 too: foam that lasts longer (the trail ends where the foam has faded).
+                    if (float.TryParse(SessionState.GetString(FoamHalfLifeKey, ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float halfLife) && halfLife > 0f)
+                    {
+                        var field = typeof(WaterRipples).GetField("foamHalfLife", flags);
+                        Debug.Log($"[WakeCapture] Foam half-life {field.GetValue(ripples)} s -> {halfLife} s");
+                        field.SetValue(ripples, halfLife);
+                    }
+                }
+                else
+                    Debug.LogWarning("[WakeCapture] No ripple simulation yet: it follows the capture camera.");
 
                 float start = 1f;
                 steps.Enqueue((start, PlaceInOpenWater));
@@ -199,7 +244,19 @@ namespace FishingVR.EditorTools
                 }
             }
 
-            // The same frame from several points of view, each without then with the contact foam.
+            // Wake look options of LakeWater.shader, each tried alone in -variants mode: (suffix, property, value).
+            static readonly (string suffix, string property, float value)[] Variants =
+            {
+                ("base", null, 0f),
+                ("p1_core", "_WakeCore", 1f),
+                ("p2_cells", "_WakeLaceStyle", 1f),
+                ("p3_bubbles", "_WakeBubbleTint", 0.55f),
+                ("p4_far", "_WakeFarSmoothing", 1f),
+            };
+
+            bool VariantsMode => SessionState.GetBool(VariantsKey, false);
+
+            // The same frame from several points of view: without then with the contact foam, or once per wake option.
             void Shots(string name, bool save = true)
             {
                 var t = motor.transform;
@@ -208,20 +265,187 @@ namespace FishingVR.EditorTools
                 float waterY = FishingWater.Exists ? FishingWater.HeightAt(t.position) : 0f;
                 var p = new Vector3(t.position.x, waterY, t.position.z);
                 if (save)
+                {
                     Debug.Log($"[WakeCapture] {name}: speed {(hydro != null ? hydro.ForwardSpeed * 3.6f : 0f):0.0} km/h, throttle {motor.Throttle:0.00}, rpm {motor.EngineRpm:0.00}, motor angle {motor.MotorAngle:0} deg");
+                    LogFoamBehind(name, fwd);
+                }
 
-                Pair($"{name}_chase", p - fwd * 6f + right * 1.5f + Vector3.up * 3.5f, p - fwd * 1.5f, save);
-                Pair($"{name}_top", p - fwd * 7f + Vector3.up * 16f, p - fwd * 6f, save, fwd);
-                Pair($"{name}_seat", p + fwd * 0.6f + Vector3.up * 1.1f, p - fwd * 8f, save);
-                Pair($"{name}_side", p + right * 9f - fwd * 3f + Vector3.up * 2.2f, p - fwd * 4f, save);
+                View($"{name}_chase", p - fwd * 6f + right * 1.5f + Vector3.up * 3.5f, p - fwd * 1.5f, save);
+                View($"{name}_top", p - fwd * 7f + Vector3.up * 16f, p - fwd * 6f, save, fwd);
+                View($"{name}_seat", p + fwd * 0.6f + Vector3.up * 1.1f, p - fwd * 8f, save, flicker: true);
+                View($"{name}_side", p + right * 9f - fwd * 3f + Vector3.up * 2.2f, p - fwd * 4f, save);
+                // Right behind the propeller, and the whole wake down to where it ends.
+                View($"{name}_close", p - fwd * 1.2f + right * 1.4f + Vector3.up * 1.6f, p - fwd * 3.2f, save);
+                View($"{name}_wide", p - fwd * 4f + right * 10f + Vector3.up * 14f, p - fwd * 16f, save, flicker: true);
             }
 
-            void Pair(string name, Vector3 eye, Vector3 target, bool save, Vector3? upHint = null)
+            void View(string name, Vector3 eye, Vector3 target, bool save, Vector3? upHint = null, bool flicker = false)
             {
                 var look = target - eye;
                 var up = upHint.HasValue && Mathf.Abs(look.normalized.y) > 0.9f ? upHint.Value : Vector3.up;
-                cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look, up));
+                var rotation = Quaternion.LookRotation(look, up);
+                cam.transform.SetPositionAndRotation(eye, rotation);
+                if (!VariantsMode || waterMaterial == null)
+                {
+                    Pair(name, eye, save);
+                    return;
+                }
+                (float[] std, float[] lum) baseShimmer = default, farShimmer = default;
+                foreach (var (suffix, property, value) in Variants)
+                {
+                    float old = property != null ? waterMaterial.GetFloat(property) : 0f;
+                    try
+                    {
+                        if (property != null)
+                            waterMaterial.SetFloat(property, value);
+                        Render(save ? Path.Combine(dir, $"{name}_{suffix}.png") : null);
+                        // Option 4 is about the shimmer: measured on the far views, without and with it.
+                        if (save && flicker && suffix == "base")
+                            baseShimmer = Flicker($"{name}_{suffix}", eye, rotation);
+                        if (save && flicker && suffix == "p4_far")
+                            farShimmer = Flicker($"{name}_{suffix}", eye, rotation);
+                    }
+                    finally
+                    {
+                        if (property != null)
+                            waterMaterial.SetFloat(property, old);
+                        cam.transform.SetPositionAndRotation(eye, rotation);
+                    }
+                }
+                if (baseShimmer.std != null && farShimmer.std != null)
+                    WakeShimmer(name, eye, rotation, baseShimmer, farShimmer);
+            }
 
+            // Shimmer of the wake alone: on the pixels where the wake foam shows (compared with the same frame without
+            // any wake foam), the glints of the sun and the light lines are left out.
+            void WakeShimmer(string name, Vector3 eye, Quaternion rotation, (float[] std, float[] lum) withBase, (float[] std, float[] lum) withFar)
+            {
+                float strength = waterMaterial.GetFloat("_WakeFoamStrength"), crest = waterMaterial.GetFloat("_CrestFoam");
+                (float[] std, float[] lum) none;
+                try
+                {
+                    waterMaterial.SetFloat("_WakeFoamStrength", 0f);
+                    waterMaterial.SetFloat("_CrestFoam", 0f);
+                    none = Flicker(null, eye, rotation);
+                }
+                finally
+                {
+                    waterMaterial.SetFloat("_WakeFoamStrength", strength);
+                    waterMaterial.SetFloat("_CrestFoam", crest);
+                    cam.transform.SetPositionAndRotation(eye, rotation);
+                }
+                double sumBase = 0.0, sumFar = 0.0, sumNone = 0.0;
+                int count = 0;
+                for (int i = 0; i < none.lum.Length; i++)
+                {
+                    if (Mathf.Abs(withBase.lum[i] - none.lum[i]) < 15f && Mathf.Abs(withFar.lum[i] - none.lum[i]) < 15f)
+                        continue;
+                    sumBase += withBase.std[i];
+                    sumFar += withFar.std[i];
+                    sumNone += none.std[i];
+                    count++;
+                }
+                if (count > 0)
+                    Debug.Log($"[WakeCapture] Wake shimmer {name} over {count} wake pixels: without wake foam {sumNone / count:0.00}, now {sumBase / count:0.00}, option 4 {sumFar / count:0.00}");
+            }
+
+            // Shimmer: the same frame from 8 head positions a centimetre apart; per pixel spread of the brightness.
+            // Saves a map (red = shimmer) when a name is given; returns the spread and the brightness of the first frame.
+            (float[] std, float[] lum) Flicker(string name, Vector3 eye, Quaternion rotation)
+            {
+                const int frames = 8;
+                var random = new System.Random(7);
+                var sum = new float[Width * Height];
+                var sumSq = new float[Width * Height];
+                Color32[] first = null;
+                for (int f = 0; f < frames; f++)
+                {
+                    var offset = new Vector3((float)random.NextDouble() - 0.5f, (float)random.NextDouble() - 0.5f, (float)random.NextDouble() - 0.5f) * 0.02f;
+                    var turn = Quaternion.Euler(((float)random.NextDouble() - 0.5f) * 0.08f, ((float)random.NextDouble() - 0.5f) * 0.08f, 0f);
+                    cam.transform.SetPositionAndRotation(eye + offset, rotation * turn);
+                    var pixels = Render(null, readBack: true);
+                    first ??= pixels;
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        float l = 0.299f * pixels[i].r + 0.587f * pixels[i].g + 0.114f * pixels[i].b;
+                        sum[i] += l;
+                        sumSq[i] += l * l;
+                    }
+                }
+                var stds = new float[Width * Height];
+                var lums = new float[Width * Height];
+                var heat = new Color32[Width * Height];
+                for (int i = 0; i < heat.Length; i++)
+                {
+                    float mean = sum[i] / frames;
+                    stds[i] = Mathf.Sqrt(Mathf.Max(0f, sumSq[i] / frames - mean * mean));
+                    lums[i] = 0.299f * first[i].r + 0.587f * first[i].g + 0.114f * first[i].b;
+                    byte grey = (byte)(0.3f * lums[i]);
+                    byte red = (byte)Mathf.Clamp(stds[i] * 6f, 0f, 255f);
+                    heat[i] = new Color32((byte)Mathf.Max(grey, red), grey, grey, 255);
+                }
+                if (name != null)
+                {
+                    var tex = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
+                    tex.SetPixels32(heat);
+                    tex.Apply();
+                    File.WriteAllBytes(Path.Combine(dir, $"{name}_flicker.png"), tex.EncodeToPNG());
+                    Object.DestroyImmediate(tex);
+                }
+                return (stds, lums);
+            }
+
+            // Foam of the ripple simulation on the line behind the propeller (to set the threshold of option 1).
+            void LogFoamBehind(string name, Vector3 fwd)
+            {
+                var rt = Shader.GetGlobalTexture("_WaterRippleTex") as RenderTexture;
+                var area = Shader.GetGlobalVector("_WaterRippleArea");
+                if (rt == null || area.w < 0.5f)
+                    return;
+                var previous = RenderTexture.active;
+                var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBAHalf, false, true);
+                try
+                {
+                    RenderTexture.active = rt;
+                    tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                    tex.Apply();
+                }
+                finally
+                {
+                    RenderTexture.active = previous;
+                }
+                var from = motor.Propeller != null ? motor.Propeller.position : motor.transform.position - fwd * 1.8f;
+                var line = new System.Text.StringBuilder($"[WakeCapture] {name} behind the propeller (foam/churn):");
+                foreach (float d in new[] { 0.25f, 0.5f, 1f, 1.5f, 2f, 3f, 4f, 6f, 8f, 10f, 12f, 14f, 16f, 20f, 24f, 28f })
+                {
+                    var q = from - fwd * d;
+                    float u = (q.x - area.x) * area.z, v = (q.z - area.y) * area.z;
+                    if (u is < 0f or > 1f || v is < 0f or > 1f)
+                        line.Append($" {d}m=out");
+                    else
+                    {
+                        var c = tex.GetPixelBilinear(u, v);
+                        line.Append($" {d}m={c.b:0.00}/{c.a:0.00}");
+                    }
+                }
+                // Across the wake (churn): does the wash open into a cone, with soft sides?
+                var right = new Vector3(fwd.z, 0f, -fwd.x);
+                foreach (float d in new[] { 1f, 3f, 5f })
+                {
+                    line.Append($"\n    churn across at {d} m:");
+                    foreach (float x in new[] { -2f, -1.5f, -1f, -0.5f, 0f, 0.5f, 1f, 1.5f, 2f })
+                    {
+                        var q = from - fwd * d + right * x;
+                        float u = (q.x - area.x) * area.z, v = (q.z - area.y) * area.z;
+                        line.Append(u is < 0f or > 1f || v is < 0f or > 1f ? " out" : $" {tex.GetPixelBilinear(u, v).a:0.00}");
+                    }
+                }
+                Object.DestroyImmediate(tex);
+                Debug.Log(line.ToString());
+            }
+
+            void Pair(string name, Vector3 eye, bool save)
+            {
                 float width = 0f, lace = 0f;
                 if (waterMaterial != null)
                 {
@@ -251,7 +475,7 @@ namespace FishingVR.EditorTools
                 Render(save ? Path.Combine(dir, name + "_on.png") : null);
             }
 
-            void Render(string path)
+            Color32[] Render(string path, bool readBack = false)
             {
                 var rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
                 var previous = RenderTexture.active;
@@ -266,14 +490,17 @@ namespace FishingVR.EditorTools
                         cam.Render();
                         cam.targetTexture = null;
                     }
-                    if (path == null)
-                        return;
+                    if (path == null && !readBack)
+                        return null;
                     RenderTexture.active = rt;
                     var tex = new Texture2D(Width, Height, TextureFormat.RGB24, false);
                     tex.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
                     tex.Apply();
-                    File.WriteAllBytes(path, tex.EncodeToPNG());
+                    if (path != null)
+                        File.WriteAllBytes(path, tex.EncodeToPNG());
+                    var pixels = readBack ? tex.GetPixels32() : null;
                     Object.DestroyImmediate(tex);
+                    return pixels;
                 }
                 finally
                 {
@@ -288,6 +515,9 @@ namespace FishingVR.EditorTools
                 bool live = SessionState.GetBool(LiveKey, false);
                 SessionState.EraseString(DirKey);
                 SessionState.EraseBool(LiveKey);
+                SessionState.EraseBool(VariantsKey);
+                SessionState.EraseString(RippleAreaKey);
+                SessionState.EraseString(FoamHalfLifeKey);
                 driving = false;
                 if (cam != null)
                     Object.DestroyImmediate(cam.gameObject);
