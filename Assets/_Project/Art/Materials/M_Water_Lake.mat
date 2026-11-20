@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties: _WakeLaceTile
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -99,12 +99,10 @@ Material:
     - _SpotRippleTile: 0.8
     - _SpotRipples: 0.7
     - _Visibility: 2.5
-    - _WakeBubbleTint: 0
-    - _WakeCore: 0
+    - _WakeBubbleTint: 0.55
+    - _WakeCore: 1
     - _WakeCoreThreshold: 0.12
-    - _WakeFarSmoothing: 0
     - _WakeFoamStrength: 1.5
-    - _WakeLaceStyle: 0
     - _WakeLaceTile: 1.1
     - _WindDirection: 35
     - _WindSpeed: 0.12
