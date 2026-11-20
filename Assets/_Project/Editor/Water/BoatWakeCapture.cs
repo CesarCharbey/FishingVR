@@ -21,7 +21,7 @@ namespace FishingVR.EditorTools
     /// the seat, side). Every picture is rendered twice on the same frame, without then with the contact foam, to
     /// check that the wake foam itself is untouched.
     ///   Unity.exe -batchmode -projectPath . -executeMethod FishingVR.EditorTools.BoatWakeCapture.Capture -captureDir "C:\shots"
-    /// From the live CLI (Editor open): BoatWakeCapture.CaptureLive(dir).
+    /// From the live CLI (Editor open): BoatWakeCapture.CaptureLive(dir) or CaptureLive(dir, variants: true).
     /// </summary>
     public static class BoatWakeCapture
     {
@@ -29,13 +29,11 @@ namespace FishingVR.EditorTools
         const string DirKey = "BoatWakeCapture.Dir";
         const string LiveKey = "BoatWakeCapture.Live";
         const string VariantsKey = "BoatWakeCapture.Variants";
-        const string RippleAreaKey = "BoatWakeCapture.RippleArea";
-        const string FoamHalfLifeKey = "BoatWakeCapture.FoamHalfLife";
 
         /// <summary>
-        /// Batch entry point. Options: -variants renders every view once per wake look option (1 to 4, alone)
-        /// instead of without/with the contact foam, and measures the shimmer of option 4; -rippleArea 64 runs with a
-        /// larger simulated area (option 5).
+        /// Batch entry point. Option -variants renders every view as it is now, then without the propeller wash's
+        /// dense core, then without its bubble cloud tint (same frame), instead of without/with the contact foam,
+        /// and measures how much the wake shimmers when the head moves.
         /// </summary>
         public static void Capture()
         {
@@ -45,17 +43,17 @@ namespace FishingVR.EditorTools
             SessionState.SetString(DirKey, dir);
             SessionState.SetBool(LiveKey, false);
             SessionState.SetBool(VariantsKey, Array.IndexOf(Environment.GetCommandLineArgs(), "-variants") >= 0);
-            SessionState.SetString(RippleAreaKey, ArgValue("-rippleArea") ?? "");
-            SessionState.SetString(FoamHalfLifeKey, ArgValue("-foamHalfLife") ?? "");
             Debug.Log($"[WakeCapture] Entering play mode, pictures to {dir}");
             EditorApplication.EnterPlaymode();
         }
 
-        public static string CaptureLive(string dir)
+        /// <summary>Live CLI entry point: plays the open scene (Main), captures, then stops Play mode.</summary>
+        public static string CaptureLive(string dir, bool variants = false)
         {
             Directory.CreateDirectory(dir);
             SessionState.SetString(DirKey, dir);
             SessionState.SetBool(LiveKey, true);
+            SessionState.SetBool(VariantsKey, variants);
             EditorApplication.EnterPlaymode();
             return $"Capturing to {dir}";
         }
@@ -152,26 +150,6 @@ namespace FishingVR.EditorTools
                     const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
                     typeof(WaterRipples).GetField("follow", flags)?.SetValue(ripples, motor.transform);
                     Debug.Log("[WakeCapture] The ripple simulation follows the boat.");
-                    // Option 5: a larger simulated area, same texel size (the trail is cut where the area ends).
-                    if (float.TryParse(SessionState.GetString(RippleAreaKey, ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float area) && area > 0f)
-                    {
-                        var sizeField = typeof(WaterRipples).GetField("areaSize", flags);
-                        var resField = typeof(WaterRipples).GetField("resolution", flags);
-                        float oldArea = (float)sizeField.GetValue(ripples);
-                        int oldRes = (int)resField.GetValue(ripples);
-                        sizeField.SetValue(ripples, area);
-                        resField.SetValue(ripples, Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(oldRes * area / oldArea)));
-                        ripples.enabled = false; // recreates the simulation textures at the new size
-                        ripples.enabled = true;
-                        Debug.Log($"[WakeCapture] Ripple area {oldArea} m / {oldRes} px -> {area} m / {resField.GetValue(ripples)} px");
-                    }
-                    // Option 5 too: foam that lasts longer (the trail ends where the foam has faded).
-                    if (float.TryParse(SessionState.GetString(FoamHalfLifeKey, ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float halfLife) && halfLife > 0f)
-                    {
-                        var field = typeof(WaterRipples).GetField("foamHalfLife", flags);
-                        Debug.Log($"[WakeCapture] Foam half-life {field.GetValue(ripples)} s -> {halfLife} s");
-                        field.SetValue(ripples, halfLife);
-                    }
                 }
                 else
                     Debug.LogWarning("[WakeCapture] No ripple simulation yet: it follows the capture camera.");
@@ -244,14 +222,12 @@ namespace FishingVR.EditorTools
                 }
             }
 
-            // Wake look options of LakeWater.shader, each tried alone in -variants mode: (suffix, property, value).
+            // -variants mode: the wake as it is, then without each part of the propeller wash (property set to 0).
             static readonly (string suffix, string property, float value)[] Variants =
             {
-                ("base", null, 0f),
-                ("p1_core", "_WakeCore", 1f),
-                ("p2_cells", "_WakeLaceStyle", 1f),
-                ("p3_bubbles", "_WakeBubbleTint", 0.55f),
-                ("p4_far", "_WakeFarSmoothing", 1f),
+                ("current", null, 0f),
+                ("no_core", "_WakeCore", 0f),
+                ("no_tint", "_WakeBubbleTint", 0f),
             };
 
             bool VariantsMode => SessionState.GetBool(VariantsKey, false);
@@ -290,7 +266,7 @@ namespace FishingVR.EditorTools
                     Pair(name, eye, save);
                     return;
                 }
-                (float[] std, float[] lum) baseShimmer = default, farShimmer = default;
+                (float[] std, float[] lum) currentShimmer = default;
                 foreach (var (suffix, property, value) in Variants)
                 {
                     float old = property != null ? waterMaterial.GetFloat(property) : 0f;
@@ -299,11 +275,9 @@ namespace FishingVR.EditorTools
                         if (property != null)
                             waterMaterial.SetFloat(property, value);
                         Render(save ? Path.Combine(dir, $"{name}_{suffix}.png") : null);
-                        // Option 4 is about the shimmer: measured on the far views, without and with it.
-                        if (save && flicker && suffix == "base")
-                            baseShimmer = Flicker($"{name}_{suffix}", eye, rotation);
-                        if (save && flicker && suffix == "p4_far")
-                            farShimmer = Flicker($"{name}_{suffix}", eye, rotation);
+                        // Shimmer of the wake as it is now, measured on the far views.
+                        if (save && flicker && property == null)
+                            currentShimmer = Flicker($"{name}_{suffix}", eye, rotation);
                     }
                     finally
                     {
@@ -312,13 +286,13 @@ namespace FishingVR.EditorTools
                         cam.transform.SetPositionAndRotation(eye, rotation);
                     }
                 }
-                if (baseShimmer.std != null && farShimmer.std != null)
-                    WakeShimmer(name, eye, rotation, baseShimmer, farShimmer);
+                if (currentShimmer.std != null)
+                    WakeShimmer(name, eye, rotation, currentShimmer);
             }
 
             // Shimmer of the wake alone: on the pixels where the wake foam shows (compared with the same frame without
             // any wake foam), the glints of the sun and the light lines are left out.
-            void WakeShimmer(string name, Vector3 eye, Quaternion rotation, (float[] std, float[] lum) withBase, (float[] std, float[] lum) withFar)
+            void WakeShimmer(string name, Vector3 eye, Quaternion rotation, (float[] std, float[] lum) withWake)
             {
                 float strength = waterMaterial.GetFloat("_WakeFoamStrength"), crest = waterMaterial.GetFloat("_CrestFoam");
                 (float[] std, float[] lum) none;
@@ -334,19 +308,18 @@ namespace FishingVR.EditorTools
                     waterMaterial.SetFloat("_CrestFoam", crest);
                     cam.transform.SetPositionAndRotation(eye, rotation);
                 }
-                double sumBase = 0.0, sumFar = 0.0, sumNone = 0.0;
+                double sumWake = 0.0, sumNone = 0.0;
                 int count = 0;
                 for (int i = 0; i < none.lum.Length; i++)
                 {
-                    if (Mathf.Abs(withBase.lum[i] - none.lum[i]) < 15f && Mathf.Abs(withFar.lum[i] - none.lum[i]) < 15f)
+                    if (Mathf.Abs(withWake.lum[i] - none.lum[i]) < 15f)
                         continue;
-                    sumBase += withBase.std[i];
-                    sumFar += withFar.std[i];
+                    sumWake += withWake.std[i];
                     sumNone += none.std[i];
                     count++;
                 }
                 if (count > 0)
-                    Debug.Log($"[WakeCapture] Wake shimmer {name} over {count} wake pixels: without wake foam {sumNone / count:0.00}, now {sumBase / count:0.00}, option 4 {sumFar / count:0.00}");
+                    Debug.Log($"[WakeCapture] Wake shimmer {name} over {count} wake pixels: without wake foam {sumNone / count:0.00}, with the wake {sumWake / count:0.00}");
             }
 
             // Shimmer: the same frame from 8 head positions a centimetre apart; per pixel spread of the brightness.
@@ -516,8 +489,6 @@ namespace FishingVR.EditorTools
                 SessionState.EraseString(DirKey);
                 SessionState.EraseBool(LiveKey);
                 SessionState.EraseBool(VariantsKey);
-                SessionState.EraseString(RippleAreaKey);
-                SessionState.EraseString(FoamHalfLifeKey);
                 driving = false;
                 if (cam != null)
                     Object.DestroyImmediate(cam.gameObject);

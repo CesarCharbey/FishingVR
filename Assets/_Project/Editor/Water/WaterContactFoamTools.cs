@@ -30,7 +30,7 @@ namespace FishingVR.EditorTools
         static void SetupBoat()
         {
             // The boat as it floats in the open scene: its waterline is measured there, then saved in the prefab.
-            var boat = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+            var boat = Object.FindObjectsByType<Transform>()
                 .FirstOrDefault(t => PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject)
                                      && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject) == BoatPrefab);
             if (boat == null)
@@ -89,7 +89,7 @@ namespace FishingVR.EditorTools
         static void SetupBuoysInOpenScene()
         {
             int count = 0;
-            foreach (var field in Object.FindObjectsByType<FloatingPlantField>(FindObjectsSortMode.None))
+            foreach (var field in Object.FindObjectsByType<FloatingPlantField>())
             {
                 if (field.name.IndexOf("Buoy", System.StringComparison.OrdinalIgnoreCase) < 0)
                     continue; // lily pads: no foam around them

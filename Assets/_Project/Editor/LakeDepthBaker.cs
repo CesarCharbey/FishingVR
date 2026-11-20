@@ -154,7 +154,7 @@ namespace FishingVR.EditorTools
             // Band width from the size of the object: same settings as the shader uses for the moving objects.
             var fullWidthSize = material.HasProperty("_ContactSizeReference") ? material.GetFloat("_ContactSizeReference") : 0.6f;
             var smallest = material.HasProperty("_ContactSmallScale") ? material.GetFloat("_ContactSmallScale") : 0.35f;
-            foreach (var filter in Object.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            foreach (var filter in Object.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude))
             {
                 var renderer = filter.GetComponent<MeshRenderer>();
                 var mesh = filter.sharedMesh;

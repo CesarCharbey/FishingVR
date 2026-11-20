@@ -90,7 +90,7 @@ namespace FishingVR.EditorTools
             showMoving = withContactFoam;
             // The lid hiding the water inside the boats is only built in Play mode: build it for the pictures.
             var masks = new List<GameObject>();
-            foreach (var mask in Object.FindObjectsByType<Boat.BoatWaterMask>(FindObjectsSortMode.None))
+            foreach (var mask in Object.FindObjectsByType<Boat.BoatWaterMask>())
             {
                 typeof(Boat.BoatWaterMask).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(mask, null);
                 var generated = mask.transform.Find("WaterMask (generated)");
@@ -171,7 +171,7 @@ namespace FishingVR.EditorTools
         static List<Target> FindTargets(float waterY, Renderer waterRenderer)
         {
             var found = new List<(string kind, Renderer r)>();
-            foreach (var r in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+            foreach (var r in Object.FindObjectsByType<MeshRenderer>())
             {
                 if (r == waterRenderer || !r.enabled || !r.gameObject.activeInHierarchy)
                     continue;
