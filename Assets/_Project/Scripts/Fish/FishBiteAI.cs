@@ -373,6 +373,7 @@ namespace FishingVR.Fish
             rod.SendHaptic(1f, 0.3f, true);
             // The fish jerks when the hook goes in.
             FX.WaterFX.Splash(body.Head, 0.4f + 0.4f * Mathf.Clamp01(body.Length / 0.6f));
+            Audio.GameAudio.Play(Audio.SoundId.HookSet, body.Head, 0.6f + 0.4f * Mathf.Clamp01(body.Length / 0.6f));
             FX.WaterFX.Bubbles(body.Head, 8, 1.2f);
             SetState(FishBiteState.Hooked);
             if (debugLogs) Debug.Log($"[Fish] Hooked {current}");

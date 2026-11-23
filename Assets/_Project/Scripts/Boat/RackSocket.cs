@@ -63,6 +63,8 @@ namespace FishingVR.Boat
         {
             base.OnSelectEntered(args);
             IgnoreBoatCollisions(args.interactableObject);
+            // Click when an item is put back (not for the item placed at start).
+            if (Time.timeSinceLevelLoad > 1f) FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.RackKnock, transform.position);
         }
 
         public override void ProcessInteractor(XRInteractionUpdateOrder.UpdatePhase updatePhase)

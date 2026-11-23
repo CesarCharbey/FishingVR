@@ -59,6 +59,7 @@ namespace FishingVR.Cooler
 
         Camera cam;
         float lidAngle;
+        bool lidOpening;
         float messageTimer;
         float highlightPulse;
         bool candidateNear;
@@ -173,6 +174,8 @@ namespace FishingVR.Cooler
             var endLocalRot = fish.transform.localRotation;
             var endScale = fish.transform.localScale;
             ShowMessage(result);
+            if (result.newSpecies || result.weightRecord)
+                Audio.GameAudio.Play(result.newSpecies ? Audio.SoundId.NewSpecies : Audio.SoundId.Record, transform.position + Vector3.up * 0.8f);
 
             for (var t = 0f; t < 1f && fish != null; t += Time.deltaTime / slideTime)
             {
@@ -186,6 +189,7 @@ namespace FishingVR.Cooler
             }
             if (fish != null) fish.transform.SetLocalPositionAndRotation(endLocalPos, endLocalRot);
             sliding.Remove(fish);
+            Audio.GameAudio.Play(Audio.SoundId.FishInCooler, transform.position + Vector3.up * 0.15f);
 
             while (stored.Count > visibleFish)
             {
@@ -225,6 +229,11 @@ namespace FishingVR.Cooler
         void UpdateLid(float dt)
         {
             var open = KeepOpen || candidateNear || sliding.Count > 0;
+            if (open != lidOpening)
+            {
+                lidOpening = open;
+                Audio.GameAudio.Play(open ? Audio.SoundId.CoolerOpen : Audio.SoundId.CoolerClose, transform.position + Vector3.up * 0.3f);
+            }
             lidAngle = Mathf.MoveTowards(lidAngle, open ? openAngle : 0f, openAngle * lidSpeed * dt * (open ? 1f : 0.6f));
             if (lid != null) lid.localRotation = Quaternion.Euler(lidAngle, 0f, 0f);
         }

@@ -67,7 +67,11 @@ namespace FishingVR.Bestiary
 
             if (gesture) { gestureTimer += dt; lostTimer = 0f; }
             else { lostTimer += dt; gestureTimer = 0f; }
-            if (!wanted && gestureTimer >= showDelay) wanted = true;
+            if (!wanted && gestureTimer >= showDelay)
+            {
+                wanted = true;
+                FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.WristOpen, wrist.position);
+            }
             if (wanted && lostTimer >= hideDelay) wanted = false;
             var visible = wanted || forceVisible;
 

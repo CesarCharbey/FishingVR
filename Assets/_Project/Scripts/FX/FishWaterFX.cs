@@ -70,7 +70,10 @@ namespace FishingVR.FX
 
             // Breaking the surface.
             if (under != wasUnder && Mathf.Abs(velocity.y) > 0.35f)
+            {
                 WaterFX.Splash(surface, Mathf.Clamp01(Mathf.Abs(velocity.y) / 3f) * 0.8f * size);
+                FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.FishSplash, surface, Mathf.Clamp01(Mathf.Abs(velocity.y) / 3f) * Mathf.Sqrt(size), 1.15f - 0.15f * Mathf.Clamp01(size - 1f));
+            }
             wasUnder = under;
 
             var submerged = body.SubmergedFraction;
@@ -90,6 +93,7 @@ namespace FishingVR.FX
                     var tail = head + transform.forward * body.Length;
                     var at = Vector3.Lerp(head, tail, Random.Range(0.3f, 1f));
                     WaterFX.Splash(at, (0.15f + 0.35f * body.Effort) * size);
+                    FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.FishSplash, at, (0.25f + 0.45f * body.Effort) * Mathf.Sqrt(size), 1.2f - 0.15f * Mathf.Clamp01(size - 1f));
                 }
                 // Dragged at the surface: a wake of rings.
                 var flat = new Vector2(velocity.x, velocity.z).magnitude;
@@ -162,7 +166,9 @@ namespace FishingVR.FX
             dripTimer = Mathf.Lerp(0.6f, 0.06f, wetTimer / dripTime) / Mathf.Sqrt(size);
             var head = body.Head;
             var tail = head + transform.forward * body.Length;
-            WaterFX.Drip(Vector3.Lerp(head, tail, Random.Range(0.2f, 1f)) + Vector3.down * 0.02f);
+            var drip = Vector3.Lerp(head, tail, Random.Range(0.2f, 1f)) + Vector3.down * 0.02f;
+            WaterFX.Drip(drip);
+            if (Random.value < 0.3f) FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.Drip, drip, 0.5f);
         }
     }
 }

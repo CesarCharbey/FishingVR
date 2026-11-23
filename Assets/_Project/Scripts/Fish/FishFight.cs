@@ -562,6 +562,7 @@ namespace FishingVR.Fish
         {
             if (!IsFighting) return;
             b.PutInNet(net);
+            Audio.GameAudio.Play(Audio.SoundId.NetScoop, net.Bag.position);
             Finish(CaptureMethod.LandingNet);
         }
 

@@ -1,0 +1,378 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3256513939838290822
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1995182310724211}
+  - component: {fileID: 3621482155630201952}
+  m_Layer: 0
+  m_Name: PF_GameAudio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1995182310724211
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3256513939838290822}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3621482155630201952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3256513939838290822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4252f328b7007204ab3ba221c2e941aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishingVR.Audio.GameAudio
+  master: 1
+  sfxVolume: 1
+  ambienceVolume: 0.55
+  boatVolume: 0.5
+  uiVolume: 0.6
+  sounds:
+  - id: 1
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 6351cb13f9c496141a374e69fe625a92, type: 3}
+    - {fileID: 8300000, guid: 6cfb22fb64893be4ea1c088fd22bea15, type: 3}
+    volume: 0.171
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.08}
+    spatial: 1
+    minDistance: 1
+    maxDistance: 15
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 2
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 7b0bfe32146b8cb4783b9a88c9a5a929, type: 3}
+    volume: 0.114
+    volumeJitter: 0.1
+    pitch: {x: 0.9, y: 1.1}
+    spatial: 1
+    minDistance: 2
+    maxDistance: 30
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 1.5
+  - id: 3
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 7b0bfe32146b8cb4783b9a88c9a5a929, type: 3}
+    volume: 0.095
+    volumeJitter: 0.1
+    pitch: {x: 1.1, y: 1.3}
+    spatial: 1
+    minDistance: 2
+    maxDistance: 25
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.15
+  - id: 4
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c52bd0459c5a498428edf4cda912723e, type: 3}
+    volume: 0.105
+    volumeJitter: 0.1
+    pitch: {x: 1.05, y: 1.2}
+    spatial: 1
+    minDistance: 2
+    maxDistance: 30
+    startOffset: 0.15
+    maxDuration: 0.7
+    cooldown: 0
+  - id: 5
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c52bd0459c5a498428edf4cda912723e, type: 3}
+    volume: 0.276
+    volumeJitter: 0.1
+    pitch: {x: 0.9, y: 1.05}
+    spatial: 1
+    minDistance: 2
+    maxDistance: 30
+    startOffset: 0.4
+    maxDuration: 1.1
+    cooldown: 0
+  - id: 10
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c52bd0459c5a498428edf4cda912723e, type: 3}
+    volume: 0.143
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.25}
+    spatial: 1
+    minDistance: 2
+    maxDistance: 30
+    startOffset: 0.5
+    maxDuration: 0.6
+    cooldown: 0.2
+  - id: 13
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c52bd0459c5a498428edf4cda912723e, type: 3}
+    volume: 0.229
+    volumeJitter: 0.1
+    pitch: {x: 0.8, y: 0.9}
+    spatial: 1
+    minDistance: 1
+    maxDistance: 15
+    startOffset: 1.2
+    maxDuration: 0.8
+    cooldown: 0
+  - id: 6
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: b0f6d4d3beea5884183abc58ba4d6e1e, type: 3}
+    volume: 0.19
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.1}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 12
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.5
+  - id: 7
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: ee6928156c6a64040a5565b8a3f2f2db, type: 3}
+    volume: 0.238
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.05}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 12
+    startOffset: 1.5
+    maxDuration: 0
+    cooldown: 2
+  - id: 8
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c44060166ef377942b5a6382150d6612, type: 3}
+    volume: 0.41
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.05}
+    spatial: 1
+    minDistance: 1
+    maxDistance: 20
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 9
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 09e4183d12286e84494383c798d0fb3a, type: 3}
+    - {fileID: 8300000, guid: cf60f8c465e616c44ad64fe03d34160a, type: 3}
+    - {fileID: 8300000, guid: 04d378fabda0d6b4a9b151ee1d99cc8f, type: 3}
+    - {fileID: 8300000, guid: 66799633b62474d4e882684edca366dd, type: 3}
+    - {fileID: 8300000, guid: 7456071fc5f8ec14681669e1afd502f2, type: 3}
+    - {fileID: 8300000, guid: 4b119820ab0900443bc509156705d8b9, type: 3}
+    volume: 0.333
+    volumeJitter: 0.2
+    pitch: {x: 0.92, y: 1.08}
+    spatial: 1
+    minDistance: 0.4
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 11
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c818a4ba5f16edf4a8a539516e18ffc2, type: 3}
+    - {fileID: 8300000, guid: ca29cd328587ac24f97da8e99cbbb56b, type: 3}
+    - {fileID: 8300000, guid: 9b311e385a10e9d44bf3b35d57951a94, type: 3}
+    volume: 0.324
+    volumeJitter: 0.1
+    pitch: {x: 0.9, y: 1.1}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 12
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.1
+  - id: 12
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 1277cfcc30e3f6c4f914fbbae5ba45f1, type: 3}
+    volume: 0.124
+    volumeJitter: 0.3
+    pitch: {x: 1.3, y: 1.7}
+    spatial: 1
+    minDistance: 0.3
+    maxDistance: 6
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.12
+  - id: 14
+    category: 2
+    clips:
+    - {fileID: 8300000, guid: b847919d25127004cb175682b4d2f774, type: 3}
+    volume: 0.19
+    volumeJitter: 0.1
+    pitch: {x: 0.55, y: 0.7}
+    spatial: 1
+    minDistance: 1.5
+    maxDistance: 30
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.2
+  - id: 15
+    category: 2
+    clips:
+    - {fileID: 8300000, guid: c52bd0459c5a498428edf4cda912723e, type: 3}
+    volume: 0.105
+    volumeJitter: 0.1
+    pitch: {x: 0.8, y: 0.95}
+    spatial: 1
+    minDistance: 2
+    maxDistance: 25
+    startOffset: 0.3
+    maxDuration: 0.6
+    cooldown: 0.5
+  - id: 16
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: dc0fb508eaa710c4ba142c61013148a1, type: 3}
+    volume: 0.19
+    volumeJitter: 0.1
+    pitch: {x: 0.9, y: 1.1}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 17
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 33f575a1267bc5c4e8da5526a41ffcac, type: 3}
+    volume: 0.048
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.05}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.3
+  - id: 18
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: b847919d25127004cb175682b4d2f774, type: 3}
+    volume: 0.076
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.05}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.3
+  - id: 19
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c818a4ba5f16edf4a8a539516e18ffc2, type: 3}
+    - {fileID: 8300000, guid: ca29cd328587ac24f97da8e99cbbb56b, type: 3}
+    - {fileID: 8300000, guid: 9b311e385a10e9d44bf3b35d57951a94, type: 3}
+    volume: 0.057
+    volumeJitter: 0.1
+    pitch: {x: 0.85, y: 1}
+    spatial: 1
+    minDistance: 0.5
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 20
+    category: 3
+    clips:
+    - {fileID: 8300000, guid: 8951d2bcbf0dafc49a22f2333d72acfd, type: 3}
+    volume: 0.219
+    volumeJitter: 0
+    pitch: {x: 1, y: 1}
+    spatial: 0.3
+    minDistance: 1
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 21
+    category: 3
+    clips:
+    - {fileID: 8300000, guid: 59e4c776f9f95ef43ae68b15e5ef330c, type: 3}
+    volume: 0.219
+    volumeJitter: 0
+    pitch: {x: 1, y: 1}
+    spatial: 0.3
+    minDistance: 1
+    maxDistance: 10
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0
+  - id: 22
+    category: 3
+    clips:
+    - {fileID: 8300000, guid: 8e5784f4d9729204f90a8b6a033c4a9d, type: 3}
+    volume: 0.085
+    volumeJitter: 0.1
+    pitch: {x: 0.95, y: 1.05}
+    spatial: 0.5
+    minDistance: 0.3
+    maxDistance: 5
+    startOffset: 0
+    maxDuration: 0
+    cooldown: 0.3
+  - id: 23
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: 8300da5b465c834488e9eff4734ba05e, type: 3}
+    - {fileID: 8300000, guid: a69719fef6d3af945bf1cd6ab0330b9c, type: 3}
+    volume: 0.133
+    volumeJitter: 0.4
+    pitch: {x: 0.9, y: 1.1}
+    spatial: 1
+    minDistance: 8
+    maxDistance: 80
+    startOffset: 0
+    maxDuration: 6
+    cooldown: 0
+  lakeLoop: {fileID: 8300000, guid: 7dbdd764289027e40b9cc1c3c668d0f5, type: 3}
+  shoreWavesLoop: {fileID: 8300000, guid: 6b0fcdaac1ecd714f9354ff6d81d7ef1, type: 3}
+  motorLoop: {fileID: 8300000, guid: 2121f1f9cd074884f91d10254ab25666, type: 3}
+  reelLoop: {fileID: 8300000, guid: 4a2b832fb10e341439e870f57a677b05, type: 3}
+  hullWaterLoop: {fileID: 8300000, guid: 6b0fcdaac1ecd714f9354ff6d81d7ef1, type: 3}
+  lakeLevel: 0.113
+  shoreWavesLevel: 0.081
+  shoreDepth: 2.5
+  birdInterval: {x: 14, y: 40}
+  birdDistance: {x: 18, y: 40}
+  engineIdle: 0.036
+  engineFull: 0.073
+  hullWater: 0.084
+  reel: 0.096
+  rodCreak: {x: 0.057, y: 0.188}
+  voices: 24

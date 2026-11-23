@@ -52,6 +52,8 @@ namespace FishingVR.FX
                 // Lands from the cast: splash scaled by the fall speed.
                 var impact = Mathf.Clamp01(-velocity.y / 7f);
                 WaterFX.Splash(pos, 0.15f + 0.35f * impact);
+                // Only a real fall (not the bobber bobbing back in after landing).
+                if (-velocity.y > 1.2f) FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.BobberLand, pos, 0.4f + 0.6f * impact);
                 idleTimer = Random.Range(0.6f, 1.2f);
             }
             wasInWater = inWater;
@@ -92,12 +94,14 @@ namespace FishingVR.FX
             {
                 // Nibble: a ring and a few drops.
                 WaterFX.Ripple(pos, 0.18f + 0.2f * s, 0.8f);
+                FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.Nibble, pos);
                 WaterFX.Spray(pos, Vector3.up * 0.8f, 2 + Mathf.RoundToInt(3f * s), 0.7f, 0.6f);
             }
             else
             {
                 // Bite: pulled under.
                 WaterFX.Splash(pos, 0.25f + 0.25f * s);
+                FishingVR.Audio.GameAudio.Play(FishingVR.Audio.SoundId.Bite, pos);
                 WaterFX.Ripple(pos, 0.5f, 1f);
                 WaterFX.Bubbles(pos + Vector3.down * 0.12f, 6, 1f);
             }
