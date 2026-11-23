@@ -8,8 +8,9 @@ namespace FishingVR.Fishing
 {
     /// <summary>
     /// Root component of the CanneAPeche prefab.
-    /// - One or two handed grip (XRGrabInteractable in Multiple select mode, first hand = main grip,
-    ///   second hand = butt of the handle).
+    /// - Held in one hand (the other hand turns the reel crank).
+    /// - Left / right handed: the reel is mirrored so that its crank is on the side of the free hand
+    ///   (<see cref="Handedness"/>, automatic by default: follows the hand holding the rod).
     /// - Tracks the rod tip velocity (used by the cast and hook-set gestures).
     /// - Cast gesture: hold the trigger (finger on the line) while holding the rod, swing forward
     ///   and release the trigger. Speed/direction of the tip at release drive the cast.
@@ -24,6 +25,8 @@ namespace FishingVR.Fishing
         [SerializeField] ReelCrank reel;
         [Tooltip("Line strength, drag... (upgradeable equipment).")]
         [SerializeField] RodStats stats;
+        [Tooltip("Reel root, mirrored (scale X = -1) for the other hand. Its crank is on the left side as modelled (rod in the right hand).")]
+        [SerializeField] Transform reelRoot;
 
         [Header("Cast")]
         [Tooltip("Minimum tip speed (m/s) at trigger release to cast.")]
@@ -57,6 +60,31 @@ namespace FishingVR.Fishing
         bool lineHeld;
         float lastHookSetTime = -10f;
 
+        /// <summary>Which hand holds the rod (the reel crank goes on the other side).</summary>
+        public enum HandMode { Auto, RightHanded, LeftHanded }
+
+        const string HandModeKey = "FishingVR.HandMode";
+
+        /// <summary>
+        /// Player setting, saved: Auto = follows the hand that takes the rod; RightHanded = rod in the right hand,
+        /// crank turned with the left hand; LeftHanded = the opposite.
+        /// </summary>
+        public static HandMode Handedness
+        {
+            get => (HandMode)PlayerPrefs.GetInt(HandModeKey, (int)HandMode.Auto);
+            set
+            {
+                PlayerPrefs.SetInt(HandModeKey, (int)value);
+                PlayerPrefs.Save();
+                foreach (var rod in FindObjectsByType<FishingRod>()) rod.ApplyHandedness(rod.heldInLeftHand);
+            }
+        }
+
+        bool heldInLeftHand;
+
+        /// <summary>The reel is mirrored (crank on the right side, rod held in the left hand).</summary>
+        public bool ReelMirrored => reelRoot != null && reelRoot.localScale.x < 0f;
+
         public XRGrabInteractable Grab => grab;
         public Transform RodTip => rodTip;
         public FishingLine Line => line;
@@ -69,7 +97,6 @@ namespace FishingVR.Fishing
         public Vector3 LinePullPoint { get; set; }
         /// <summary>Held by a hand (not just resting in a rack).</summary>
         public bool IsHeld => MainHand != null;
-        public bool IsTwoHanded => HandCount > 1;
 
         /// <summary>
         /// The hand holding the rod (first hand still selecting it). Not firstInteractorSelecting: after taking the
@@ -155,9 +182,37 @@ namespace FishingVR.Fishing
         {
             if (!(args.interactorObject is XRSocketInteractor) && HandCount == 1)
             {
+                ApplyHandedness(IsLeftHand(args.interactorObject));
                 onGrabbed?.Invoke();
                 SendHaptic(0.2f, 0.05f);
             }
+        }
+
+        static bool IsLeftHand(IXRSelectInteractor interactor)
+        {
+            if (interactor is XRBaseInteractor bi && bi.handedness != InteractorHandedness.None)
+                return bi.handedness == InteractorHandedness.Left;
+            // Fallback on the names of the rig ("Left Controller", "Left Hand"...).
+            for (var t = interactor.transform; t != null; t = t.parent)
+                if (t.name.IndexOf("Left", System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return false;
+        }
+
+        /// <summary>Puts the reel crank on the side of the free hand.</summary>
+        public void ApplyHandedness(bool rodInLeftHand)
+        {
+            heldInLeftHand = rodInLeftHand;
+            if (reelRoot == null) return;
+            if (reel != null && reel.isSelected) return; // never flip under the hand turning it
+            var left = Handedness switch
+            {
+                HandMode.RightHanded => false,
+                HandMode.LeftHanded => true,
+                _ => rodInLeftHand,
+            };
+            var scale = reelRoot.localScale;
+            scale.x = Mathf.Abs(scale.x) * (left ? -1f : 1f);
+            reelRoot.localScale = scale;
         }
 
         void OnSelectExited(SelectExitEventArgs args)

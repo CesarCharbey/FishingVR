@@ -90,37 +90,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &3641848055762310047
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3593078915984072463}
-  m_Layer: 7
-  m_Name: AttachPoint_Second
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3593078915984072463
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3641848055762310047}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.27}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6100855214561927536}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4163612343761511274
 GameObject:
   m_ObjectHideFlags: 0
@@ -1359,7 +1328,6 @@ Transform:
   - {fileID: 8042735873424786132}
   - {fileID: 892733551813899522}
   - {fileID: 6955551631503657947}
-  - {fileID: 3593078915984072463}
   - {fileID: 2568466844011569376}
   - {fileID: 8007002755527648211}
   - {fileID: 2223665866039133080}
@@ -1410,7 +1378,7 @@ MonoBehaviour:
   m_InteractionLayers:
     m_Bits: 1
   m_DistanceCalculationMode: 1
-  m_SelectMode: 1
+  m_SelectMode: 0
   m_FocusMode: 1
   m_CustomReticle: {fileID: 0}
   m_AllowGazeInteraction: 0
@@ -1468,7 +1436,7 @@ MonoBehaviour:
   m_AutoFindParentInteractableInHierarchy: 0
   m_ParentInteractableObject: {fileID: 0}
   m_AttachTransform: {fileID: 6955551631503657947}
-  m_SecondaryAttachTransform: {fileID: 3593078915984072463}
+  m_SecondaryAttachTransform: {fileID: 0}
   m_UseDynamicAttach: 0
   m_MatchAttachPosition: 1
   m_MatchAttachRotation: 1
@@ -1562,6 +1530,7 @@ MonoBehaviour:
   line: {fileID: 4041568888057460631}
   reel: {fileID: 5189789373634800627}
   stats: {fileID: 11400000, guid: c4dd1a217a4c63a4a8942b9a4904ee7d, type: 2}
+  reelRoot: {fileID: 892733551813899522}
   minCastSpeed: 2.5
   castPowerMultiplier: 1.4
   maxLaunchSpeed: 18
