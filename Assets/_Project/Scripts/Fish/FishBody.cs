@@ -157,6 +157,7 @@ namespace FishingVR.Fish
             fb.grab = root.AddComponent<XRGrabInteractable>();
             fb.grab.movementType = XRBaseInteractable.MovementType.Instantaneous;
             fb.grab.useDynamicAttach = true;
+            fb.grab.farAttachMode = UnityEngine.XR.Interaction.Toolkit.Attachment.InteractableFarAttachMode.Near; // grabbed from afar, it comes to the hand (the stick must not push it away)
             fb.grab.throwOnDetach = true;
             fb.grab.selectFilters.Add(fb);
             fb.grab.selectEntered.AddListener(fb.OnGrabbed);

@@ -74,14 +74,16 @@ namespace FishingVR.Audio
         [Tooltip("Shore waves are heard when the water under the player is shallower than this (m).")]
         [SerializeField] float shoreDepth = 2.5f;
         [Tooltip("Seconds between two distant bird calls.")]
-        [SerializeField] Vector2 birdInterval = new Vector2(14f, 40f);
+        [SerializeField] Vector2 birdInterval = new Vector2(45f, 100f);
         [SerializeField] Vector2 birdDistance = new Vector2(18f, 40f);
 
         [Header("Continuous sounds (levels before the category volume)")]
-        [Tooltip("Boat engine at idle (only while the player sits at the helm).")]
+        [Tooltip("Boat engine at idle (tiller held, or just let go).")]
         [Range(0f, 1f)] public float engineIdle = 0.12f;
         [Tooltip("Boat engine at full throttle.")]
         [Range(0f, 1f)] public float engineFull = 0.6f;
+        [Tooltip("Seconds the engine keeps idling once the tiller is let go, before it stops by itself.")]
+        [Min(0f)] public float engineStopDelay = 10f;
         [Tooltip("Water rushing along the hull at full speed.")]
         [Range(0f, 1f)] public float hullWater = 0.45f;
         [Tooltip("Reel ratchet while cranking.")]

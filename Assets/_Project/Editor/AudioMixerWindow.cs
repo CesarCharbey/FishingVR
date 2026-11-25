@@ -73,7 +73,7 @@ namespace FishingVR.EditorTools
             Header("Sons continus");
             LoopRow(so, "lakeLevel", "Fond du lac", "lakeLoop");
             LoopRow(so, "shoreWavesLevel", "Vagues de rive (près du bord)", "shoreWavesLoop");
-            LoopRow(so, "engineIdle", "Moteur au ralenti (assis)", "motorLoop");
+            LoopRow(so, "engineIdle", "Moteur au ralenti (barre tenue)", "motorLoop");
             LoopRow(so, "engineFull", "Moteur à plein gaz", "motorLoop");
             LoopRow(so, "hullWater", "Eau sur la coque (pleine vitesse)", "hullWaterLoop");
             LoopRow(so, "reel", "Moulinet", "reelLoop");

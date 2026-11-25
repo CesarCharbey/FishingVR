@@ -4,9 +4,10 @@ using UnityEngine;
 namespace FishingVR.Audio
 {
     /// <summary>
-    /// Boat sounds (added by <see cref="GameAudio"/> on each boat's motor): the engine, quiet, following its
-    /// speed (a soft idle only while the player sits at the helm); water rushing along the hull with the speed;
-    /// knocks on impacts; a splash when the propeller falls back in the water.
+    /// Boat sounds (added by <see cref="GameAudio"/> on each boat's motor): the engine, started by taking the
+    /// tiller, following its speed, and stopping by itself a while after the tiller was let go
+    /// (<see cref="GameAudio.engineStopDelay"/>); water rushing along the hull with the speed; knocks on impacts;
+    /// a splash when the propeller falls back in the water.
     /// </summary>
     public class BoatAudio : MonoBehaviour
     {
@@ -15,16 +16,20 @@ namespace FishingVR.Audio
         [SerializeField] float hullFullSpeed = 4f;
 
         BoatMotor motor;
-        BoatSeat seat;
+        TillerInteractable tiller;
         Rigidbody body;
         LoopPlayer engine, hull;
         float engineLevel;
+        float engineOnUntil = -1f; // Time.time at which the idling engine stops
+
+        /// <summary>The engine is running (heard, even at idle).</summary>
+        public bool EngineOn => Time.time < engineOnUntil;
 
         void Start()
         {
             motor = GetComponentInParent<BoatMotor>();
             if (motor == null) motor = GetComponentInChildren<BoatMotor>();
-            seat = GetComponentInParent<BoatSeat>();
+            tiller = motor != null ? motor.GetComponentInChildren<TillerInteractable>(true) : null;
             body = GetComponentInParent<Rigidbody>();
             var audio = GameAudio.Instance;
             if (audio == null) { enabled = false; return; }
@@ -53,10 +58,11 @@ namespace FishingVR.Audio
             var dt = Time.deltaTime;
             var cat = audio.Category(SoundCategory.Boat);
 
-            // Engine: silent when nobody drives, a soft idle at the helm, louder with the engine speed.
+            // Engine: starts with the tiller (or any throttle), louder with the engine speed; let go, it idles for
+            // a moment then stops. Silent otherwise, even when sitting in the boat.
             var rpm = Mathf.Max(0f, motor.EngineRpm);
-            var seated = seat != null && seat.Seated != null;
-            var target = rpm > 0.02f ? Mathf.Lerp(audio.engineIdle, audio.engineFull, Mathf.Clamp01(rpm)) : seated ? audio.engineIdle : 0f;
+            if (rpm > 0.02f || (tiller != null && tiller.isSelected)) engineOnUntil = Time.time + audio.engineStopDelay;
+            var target = EngineOn ? Mathf.Lerp(audio.engineIdle, audio.engineFull, Mathf.Clamp01(rpm)) : 0f;
             engineLevel = Mathf.MoveTowards(engineLevel, target, dt * (target > engineLevel ? 1.5f : 0.5f));
             if (engine.HasClip)
             {

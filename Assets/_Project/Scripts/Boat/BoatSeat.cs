@@ -37,6 +37,18 @@ namespace FishingVR.Boat
                  "1 = rigidly attached to the boat.")]
         [SerializeField, Range(0f, 1f)] float tiltFollow = 0.25f;
 
+        [Header("Straighten the view")]
+        [Tooltip("Time (s) after sitting down during which the view is turned toward the bow once more, as soon as the head " +
+                 "holds still and level: the first alignment is done while the player still looks down and sideways at the seat. 0 = off.")]
+        [SerializeField, Min(0f)] float straightenWindow = 2.5f;
+
+        [Tooltip("The head must turn slower than this (degrees/s) to count as still.")]
+        [SerializeField, Min(1f)] float straightenMaxHeadSpeed = 25f;
+
+        [Tooltip("Only straighten when the view is off by this much (degrees): less is not worth a snap, " +
+                 "more means the player is deliberately looking away (tiller, rods).")]
+        [MinMax] [SerializeField] Vector2 straightenRange = new(6f, 60f);
+
         [Header("Locomotion")]
         [Tooltip("Keep teleportation while seated: aim at the shore / dock to get off (see BoatBoarding).")]
         [SerializeField] bool keepTeleportWhileSeated = true;
@@ -140,6 +152,8 @@ namespace FishingVR.Boat
             origin.transform.localPosition = Vector3.zero;
             origin.transform.localRotation = Quaternion.identity;
             Recenter();
+            if (straightenWindow > 0f)
+                StartCoroutine(StraightenOnceStill(origin));
             onMounted?.Invoke(origin);
         }
 
@@ -183,13 +197,53 @@ namespace FishingVR.Boat
             Transform head = seated.Camera.transform;
 
             // Turn the origin around the head so the head looks toward the bow.
-            Vector3 headForward = anchor.InverseTransformDirection(head.forward);
-            float headYaw = Mathf.Atan2(headForward.x, headForward.z) * Mathf.Rad2Deg;
-            originTransform.RotateAround(head.position, anchor.up, -headYaw);
+            originTransform.RotateAround(head.position, anchor.up, -HeadYaw(head));
 
             // Slide it horizontally so the head is above the anchor.
             Vector3 headLocal = anchor.InverseTransformPoint(head.position);
             originTransform.position -= anchor.TransformVector(new Vector3(headLocal.x, 0f, headLocal.z));
+        }
+
+        /// <summary>Heading of the head relative to the bow (degrees), also when looking almost straight down or up.</summary>
+        float HeadYaw(Transform head)
+        {
+            Vector3 forward = anchor.InverseTransformDirection(head.forward);
+            Vector3 up = anchor.InverseTransformDirection(head.up);
+            // Looking straight down, the top of the head points where the face would: use it there.
+            Vector3 heading = Mathf.Abs(forward.y) > 0.85f ? up * -Mathf.Sign(forward.y) : forward;
+            return Mathf.Atan2(heading.x, heading.z) * Mathf.Rad2Deg;
+        }
+
+        // The player boards looking at the seat, head turned and lowered. Once the head is level and still,
+        // face the bow again (one snap, like a snap turn).
+        IEnumerator StraightenOnceStill(XROrigin origin)
+        {
+            const float stillTime = 0.3f;
+            const float maxPitch = 30f;
+            Transform head = origin.Camera != null ? origin.Camera.transform : null;
+            if (head == null)
+                yield break;
+
+            float end = Time.time + straightenWindow;
+            float still = 0f;
+            Quaternion last = head.localRotation;
+            while (Time.time < end)
+            {
+                yield return null;
+                if (seated != origin)
+                    yield break; // Got off.
+                float speed = Quaternion.Angle(last, head.localRotation) / Mathf.Max(Time.deltaTime, 1e-4f);
+                last = head.localRotation;
+                float pitch = Mathf.Asin(Mathf.Clamp(anchor.InverseTransformDirection(head.forward).y, -1f, 1f)) * Mathf.Rad2Deg;
+                still = speed < straightenMaxHeadSpeed && Mathf.Abs(pitch) < maxPitch ? still + Time.deltaTime : 0f;
+                if (still < stillTime)
+                    continue;
+
+                float yaw = Mathf.Abs(HeadYaw(head));
+                if (yaw >= straightenRange.x && yaw <= straightenRange.y)
+                    Recenter();
+                yield break;
+            }
         }
 
         [ContextMenu("Debug: Recenter")]

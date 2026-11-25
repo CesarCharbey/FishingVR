@@ -50,6 +50,12 @@ namespace FishingVR.Fishing
 
         Vector3 WorldAxis => crankPivot.TransformDirection(crankLocalAxis).normalized;
 
+        /// <summary>
+        /// Sign of the reel-in rotation around <see cref="WorldAxis"/>. Mirroring the reel for a left-handed grip
+        /// (negative scale) flips that axis but not the gesture: the crank still goes over the top, forward.
+        /// </summary>
+        float ReelInSign => Mathf.Sign(reelInDirection) * (crankPivot.localToWorldMatrix.determinant < 0f ? -1f : 1f);
+
         protected override void OnSelectEntered(SelectEnterEventArgs args)
         {
             base.OnSelectEntered(args);
@@ -94,7 +100,8 @@ namespace FishingVR.Fishing
         /// </summary>
         public void Turn(float degrees, IXRSelectInteractor hand = null)
         {
-            var reelDegrees = degrees * Mathf.Sign(reelInDirection);
+            var sign = ReelInSign;
+            var reelDegrees = degrees * sign;
             if (antiReverse && reelDegrees < 0f)
                 reelDegrees = 0f;
 
@@ -103,7 +110,7 @@ namespace FishingVR.Fishing
             if (reelDegrees <= 0f)
                 return;
 
-            var applied = reelDegrees * Mathf.Sign(reelInDirection);
+            var applied = reelDegrees * sign;
             crankPivot.Rotate(crankLocalAxis, applied, Space.Self);
             if (spool != null)
                 spool.Rotate(spoolLocalAxis, applied * spoolSpeedRatio, Space.Self);
